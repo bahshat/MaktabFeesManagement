@@ -75,7 +75,7 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, setCurrentPage }) => {
                 {isLoggedIn && (
                     <div className="absolute right-0 flex space-x-2 mr-2"> {/* Positioning buttons to the right */}
                         <button
-                            onClick={() => setCurrentPage('settings')} 
+                            onClick={() => setCurrentPage('settings')}
                             className="p-2 bg-blue-600 rounded-full hover:bg-blue-700 transition duration-200"
                             title="Settings"
                         >
@@ -1157,10 +1157,10 @@ const App: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // Authentication state
 
     // Base URL for the Flask API
-    // IMPORTANT: If running on a physical mobile device, replace '127.0.0.1' with your computer's local IP address
+    // IMPORTANT: If running on a physical mobile device, replace '192.168.1.6' with your computer's local IP address
     // (e.g., 'http://192.168.1.5:5000').
     // Also, ensure your Flask backend has Flask-CORS installed and configured to allow requests from your frontend's origin.
-    const API_BASE_URL = 'http://127.0.0.1:5000';
+    const API_BASE_URL = 'http://192.168.1.6:5000';
 
     // Message display component
     interface MessageDisplayProps {
@@ -1190,12 +1190,11 @@ const App: React.FC = () => {
         );
     };
 
-    // Data fetching functions (updated to use global loading state)
+    // Data fetching functions (updated to return Promise<T | null>)
     const fetchData = useCallback(async <T,>(
         url: string,
-        errorMessage: string,
-        setter: React.Dispatch<React.SetStateAction<T | null>>
-    ) => {
+        errorMessage: string
+    ): Promise<T | null> => { // Changed return type to Promise<T | null>
         setLoading(true); // Start loading
         setError(null);
         setSuccessMessage(null);
@@ -1213,35 +1212,37 @@ const App: React.FC = () => {
                 throw new Error(parsedError?.error || `HTTP error! Status: ${response.status}. Response: ${errorText || 'No response body.'}`);
             }
             const data: T = await response.json();
-            setter(data);
+            return data; // Return data directly
         } catch (e: any) {
             console.error(errorMessage, e);
             setError(`${errorMessage} Please ensure the Flask backend is running on ${API_BASE_URL} and CORS is configured. Error: ${e.message}`);
-            setter(null);
+            return null; // Return null on error
         } finally {
             setLoading(false); // End loading
         }
     }, [API_BASE_URL, setError, setSuccessMessage]); // Include setError and setSuccessMessage in dependencies
 
 
-    const fetchAllStudents = useCallback(() => {
-        fetchData<Student[]>(`${API_BASE_URL}/students`, "Failed to load students.", setStudents);
+    // Updated data fetchers to await fetchData and set state
+    const fetchAllStudents = useCallback(async () => {
+        const data = await fetchData<Student[]>(`${API_BASE_URL}/students`, "Failed to load students.");
+        setStudents(data);
     }, [fetchData, API_BASE_URL]);
 
-    const fetchPendingStudents = useCallback(() => {
-        fetchData<Student[]>(`${API_BASE_URL}/students/pending`, "Failed to load pending students.", setPendingStudents);
+    const fetchPendingStudents = useCallback(async () => {
+        const data = await fetchData<Student[]>(`${API_BASE_URL}/students/pending`, "Failed to load pending students.");
+        setPendingStudents(data);
     }, [fetchData, API_BASE_URL]);
 
-    const fetchStudentPayments = useCallback((studentId: number) => {
-        fetchData<StudentPaymentDetailsResponse>(`${API_BASE_URL}/students/${studentId}/payments`, "Failed to load payment details.", (fetchedData: StudentPaymentDetailsResponse | null) => { // Explicitly type fetchedData
-            if (fetchedData) { // Explicitly check if data is not null
-                setSelectedStudent(fetchedData.student);
-                setStudentPayments(fetchedData);
-            } else {
-                setSelectedStudent(null);
-                setStudentPayments(null);
-            }
-        });
+    const fetchStudentPayments = useCallback(async (studentId: number) => {
+        const fetchedData = await fetchData<StudentPaymentDetailsResponse>(`${API_BASE_URL}/students/${studentId}/payments`, "Failed to load payment details.");
+        if (fetchedData) { // Explicitly check if data is not null
+            setSelectedStudent(fetchedData.student);
+            setStudentPayments(fetchedData);
+        } else {
+            setSelectedStudent(null);
+            setStudentPayments(null);
+        }
     }, [fetchData, API_BASE_URL]);
 
 
