@@ -62,11 +62,10 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ isLoading }) => {
 // Header.tsx (Updated with Change Password and Logout buttons)
 interface HeaderProps {
     isLoggedIn: boolean;
-    handleLogout: () => void;
     setCurrentPage: (page: string) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ isLoggedIn, handleLogout, setCurrentPage }) => {
+const Header: React.FC<HeaderProps> = ({ isLoggedIn, setCurrentPage }) => {
     return (
         <header className="bg-gradient-to-r from-blue-700 to-indigo-900 text-white p-6 pb-8 rounded-b-3xl shadow-xl relative z-10 font-bold">
             <div className="flex justify-center items-center relative w-full"> {/* Flex container for title and buttons */}
@@ -76,7 +75,7 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, handleLogout, setCurrentPag
                 {isLoggedIn && (
                     <div className="absolute right-0 flex space-x-2 mr-2"> {/* Positioning buttons to the right */}
                         <button
-                            onClick={() => setCurrentPage('settings')}
+                            onClick={() => setCurrentPage('settings')} 
                             className="p-2 bg-blue-600 rounded-full hover:bg-blue-700 transition duration-200"
                             title="Settings"
                         >
@@ -129,7 +128,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, setCurrentPage, fe
 interface StudentListProps {
     students: Student[] | null;
     title: string;
-    onSelectStudent: (student: Student) => void;
+    onSelectStudent: (student: Student, viewMode: 'full' | 'pending-summary') => void; // Added viewMode prop
 }
 
 const StudentList: React.FC<StudentListProps> = ({ students, title, onSelectStudent }) => {
@@ -170,7 +169,7 @@ const StudentList: React.FC<StudentListProps> = ({ students, title, onSelectStud
                     {filteredStudents.map(student => (
                         <li
                             key={student.id}
-                            onClick={() => onSelectStudent(student)} // Make entire card clickable
+                            onClick={() => onSelectStudent(student, 'full')} // Pass 'full' viewMode
                             className="py-3 px-4 flex items-center justify-between transition duration-200 ease-in-out hover:bg-blue-50 rounded-lg cursor-pointer -mx-2"
                         >
                             <div className="flex-1 min-w-0 flex items-center">
@@ -334,6 +333,7 @@ interface StudentDetailProps {
     onBackToList: () => void;
     handleDeleteStudent: (studentId: number, studentName: string, passwordConfirmation: string) => Promise<void>; // Added passwordConfirmation
     setError: (message: string | null) => void;
+    setSuccessMessage: (message: string | null) => void; // Passed down from App.tsx
     pendingDataForStudent: {
         pending_months: number;
         pending_amount: number;
@@ -343,7 +343,7 @@ interface StudentDetailProps {
     viewMode: 'full' | 'pending-summary'; // New prop to control display mode
 }
 
-const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpdatePayment, onBackToList, handleDeleteStudent, setError, pendingDataForStudent, allStudents, viewMode }) => {
+const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpdatePayment, onBackToList, handleDeleteStudent, setError, setSuccessMessage, pendingDataForStudent, allStudents, viewMode }) => {
     const [newPaidTill, setNewPaidTill] = useState<string>('');
     const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false); // State for confirmation dialog
     const [deletePassword, setDeletePassword] = useState<string>(''); // State for delete password input
@@ -364,16 +364,7 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpda
         setNewPaidTill('');
     };
 
-    const getSiblingsPendingInfo = (targetPhone: string | null): Student[] => {
-        if (!allStudents || !targetPhone) return [];
-
-        // Filter all students to find those with the same phone number AND pending fees
-        const siblingsAndSelfWithPending = allStudents.filter(
-            s => s.phone === targetPhone && s.pending_amount !== undefined && s.pending_amount > 0
-        );
-        return siblingsAndSelfWithPending;
-    };
-
+    // Removed getSiblingsPendingInfo as it's no longer directly used in this component's reminder logic
 
     const generateCombinedMessage = (sendType: 'whatsapp' | 'sms', studentsToSend: Student[]) => {
         if (studentsToSend.length === 0) {
@@ -1230,7 +1221,8 @@ const App: React.FC = () => {
         } finally {
             setLoading(false); // End loading
         }
-    }, [API_BASE_URL]);
+    }, [API_BASE_URL, setError, setSuccessMessage]); // Include setError and setSuccessMessage in dependencies
+
 
     const fetchAllStudents = useCallback(() => {
         fetchData<Student[]>(`${API_BASE_URL}/students`, "Failed to load students.", setStudents);
@@ -1241,9 +1233,14 @@ const App: React.FC = () => {
     }, [fetchData, API_BASE_URL]);
 
     const fetchStudentPayments = useCallback((studentId: number) => {
-        fetchData<StudentPaymentDetailsResponse>(`${API_BASE_URL}/students/${studentId}/payments`, "Failed to load payment details.", (data) => {
-            setSelectedStudent(data.student);
-            setStudentPayments(data);
+        fetchData<StudentPaymentDetailsResponse>(`${API_BASE_URL}/students/${studentId}/payments`, "Failed to load payment details.", (fetchedData) => {
+            if (fetchedData) { // Explicitly check if data is not null
+                setSelectedStudent(fetchedData.student);
+                setStudentPayments(fetchedData);
+            } else {
+                setSelectedStudent(null);
+                setStudentPayments(null);
+            }
         });
     }, [fetchData, API_BASE_URL]);
 
@@ -1280,7 +1277,7 @@ const App: React.FC = () => {
         } finally {
             setLoading(false); // End loading
         }
-    }, []);
+    }, [setError, setSuccessMessage]); // Include setError and setSuccessMessage in dependencies
 
     const handleAddStudent = async (studentData: {
         name: string;
@@ -1407,7 +1404,7 @@ const App: React.FC = () => {
 
         switch (currentPage) {
             case 'allStudents':
-                return <StudentList students={students} title="All Students" onSelectStudent={(s) => viewStudentDetail(s, 'full')} />;
+                return <StudentList students={students} title="All Students" onSelectStudent={(s, mode) => viewStudentDetail(s, mode)} />;
             case 'pendingStudents':
                 return (
                     <div className="bg-white p-4 rounded-2xl shadow-lg mb-6 mx-auto w-full max-w-xl">
@@ -1463,6 +1460,7 @@ const App: React.FC = () => {
                         onBackToList={() => setCurrentPage('allStudents')}
                         handleDeleteStudent={handleDeleteStudent}
                         setError={setError}
+                        setSuccessMessage={setSuccessMessage} // Pass setSuccessMessage
                         pendingDataForStudent={{
                             pending_months: studentPayments.pending_months,
                             pending_amount: studentPayments.pending_amount,
@@ -1521,7 +1519,7 @@ const App: React.FC = () => {
 
             <LoadingOverlay isLoading={loading} /> {/* Global Loading Indicator */}
 
-            <Header isLoggedIn={isLoggedIn} handleLogout={handleLogout} setCurrentPage={setCurrentPage} />
+            <Header isLoggedIn={isLoggedIn} setCurrentPage={setCurrentPage} handleLogout={handleLogout} />
 
             <main className="max-w-4xl mx-auto px-4 pt-4">
                 <MessageDisplay message={error} type="error" />
