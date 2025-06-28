@@ -2,9 +2,18 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
     Home, Clock, UserPlus, BookOpen, GraduationCap, Search,
     DollarSign, MapPin, Phone, CalendarDays, CheckCircle, XCircle,
-    BarChart2, PieChart, TrendingUp, Settings, ChevronDown, ChevronUp, Globe, LogOut, Lock, BellRing, User, MessageSquare, MessageSquareText // Icons for dashboard, settings, expand/collapse, reminders, user, WhatsApp, SMS
+    BarChart2, PieChart, TrendingUp, Settings, ChevronDown, ChevronUp, Globe, LogOut, Lock, BellRing, User, MessageSquare, MessageSquareText, ArrowLeftCircle // Icons for dashboard, settings, expand/collapse, reminders, user, WhatsApp, SMS, Back Arrow
 } from 'lucide-react'; // Ensure 'lucide-react' is installed via npm/yarn
-import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, XAxis, YAxis, Bar, LineChart, Line } from 'recharts';
+import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+
+// --- Utility Functions ---
+const formatDate = (dateString: string | Date | undefined | null): string => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'N/A'; // Handle invalid date strings
+    const options: Intl.DateTimeFormatOptions = { month: 'short', day: '2-digit', year: '2-digit' };
+    return date.toLocaleDateString('en-US', options);
+};
 
 // --- Type Definitions ---
 interface Student {
@@ -61,39 +70,20 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ isLoading }) => {
 interface HeaderProps {
     setCurrentPage: (page: string) => void;
     currentLanguage: 'en' | 'ur';
-    toggleLanguage: () => void;
     isLoggedIn: boolean; // Added isLoggedIn prop
-    handleLogout: () => void; // Added handleLogout prop
 }
 
-const Header: React.FC<HeaderProps> = ({ setCurrentPage, currentLanguage, toggleLanguage, isLoggedIn, handleLogout }) => {
+const Header: React.FC<HeaderProps> = ({ setCurrentPage, currentLanguage, isLoggedIn }) => {
     const title = currentLanguage === 'en' ? 'Maktab Fees Portal' : 'مکتب فیس پورٹل';
-    const subtitle = currentLanguage === 'en' ? 'Manage payments with ease' : 'آسانی سے ادائیگیوں کا انتظام کریں';
     const organizationName = currentLanguage === 'en' ? 'Anjuman Abu Hurairah' : 'انجمن ابو ہریرہ';
 
     return (
-        <header className="bg-gradient-to-br from-blue-700 to-purple-800 text-white p-6 pb-8 rounded-b-3xl shadow-xl relative z-10 font-bold">
+        <header className="fixed top-0 left-0 right-0 bg-gradient-to-br from-blue-700 to-purple-800 text-white p-4 pb-6 rounded-b-3xl shadow-xl z-20 font-bold"> {/* Fixed header, reduced padding */}
             <div className="flex justify-center items-center relative w-full">
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-center tracking-wide leading-tight flex-grow drop-shadow-lg">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-center tracking-wide leading-tight flex-grow drop-shadow-lg"> {/* Reduced font size */}
                     {title}
                 </h1>
-                <div className="absolute right-0 flex space-x-2 mr-2 z-20 top-4 sm:top-auto"> {/* Adjusted positioning and z-index */}
-                    {isLoggedIn && ( // Only show logout if logged in
-                        <button
-                            onClick={handleLogout}
-                            className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition duration-200 shadow-md"
-                            title={currentLanguage === 'en' ? 'Logout' : 'لاگ آوٹ'}
-                        >
-                            <LogOut className="w-5 h-5 text-white" />
-                        </button>
-                    )}
-                    <button
-                        onClick={toggleLanguage}
-                        className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition duration-200 shadow-md"
-                        title={currentLanguage === 'en' ? 'Change Language' : 'زبان تبدیل کریں'}
-                    >
-                        <Globe className="w-5 h-5 text-white" />
-                    </button>
+                <div className="absolute right-0 flex space-x-2 mr-2 z-20 top-2 sm:top-auto"> {/* Adjusted positioning and z-index */}
                     {isLoggedIn && ( // Only show settings if logged in
                         <button
                             onClick={() => setCurrentPage('settings')}
@@ -106,7 +96,6 @@ const Header: React.FC<HeaderProps> = ({ setCurrentPage, currentLanguage, toggle
                 </div>
             </div>
             <p className="text-center text-sm text-blue-200 mt-1 font-medium">{organizationName}</p>
-            <p className="text-center text-sm text-blue-200 mt-1 font-medium">{subtitle}</p>
         </header>
     );
 };
@@ -158,9 +147,10 @@ interface StudentListProps {
     students: Student[] | null;
     title: string;
     onSelectStudent: (student: Student, viewMode: 'full' | 'pending-summary') => void; // Added viewMode
+    currentLanguage: 'en' | 'ur'; // Added for language support
 }
 
-const StudentList: React.FC<StudentListProps> = ({ students, title, onSelectStudent }) => {
+const StudentList: React.FC<StudentListProps> = ({ students, title, onSelectStudent, currentLanguage }) => {
     const [searchTerm, setSearchTerm] = useState<string>('');
 
     const filteredStudents = students?.filter(student =>
@@ -168,14 +158,14 @@ const StudentList: React.FC<StudentListProps> = ({ students, title, onSelectStud
     ) || [];
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full max-w-xl border border-blue-50">
+        <div className="p-6 rounded-2xl mb-6 mx-auto w-full max-w-xl"> {/* Removed bg-white, shadow, border from here */}
             <h2 className="text-2xl font-bold mb-5 text-gray-800 text-center">{title}</h2>
 
             {/* Search Input */}
-            <div className="relative mb-6">
+            <div className="relative mb-6 bg-white p-3 rounded-xl shadow-sm border border-blue-50"> {/* Added card styling to search */}
                 <input
                     type="text"
-                    placeholder="Search students by name..."
+                    placeholder={currentLanguage === 'en' ? "Search students by name..." : "طالب علم کا نام تلاش کریں..."}
                     className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-blue-500 focus:border-blue-500 transition duration-150 shadow-sm"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -186,27 +176,31 @@ const StudentList: React.FC<StudentListProps> = ({ students, title, onSelectStud
             {!students || students.length === 0 ? (
                 <div className="bg-blue-50 p-6 rounded-xl shadow-inner text-center text-gray-600 mt-8">
                     <BookOpen className="w-12 h-12 mx-auto mb-4 text-blue-300" />
-                    <p className="text-lg font-medium">No student records found.</p>
+                    <p className="text-lg font-medium">{currentLanguage === 'en' ? 'No student records found.' : 'طالب علم کے کوئی ریکارڈ نہیں ملے۔'}</p>
                 </div>
             ) : filteredStudents.length === 0 ? (
                 <div className="bg-blue-50 p-6 rounded-xl shadow-inner text-center text-gray-600 mt-8">
                     <Search className="w-12 h-12 mx-auto mb-4 text-blue-300" />
-                    <p className="text-lg font-medium">No students match your search criteria.</p>
+                    <p className="text-lg font-medium">{currentLanguage === 'en' ? 'No students match your search criteria.' : 'آپ کے تلاش کے معیار سے کوئی طالب علم نہیں ملا۔'}</p>
                 </div>
             ) : (
-                <ul className="divide-y divide-blue-50">
+                <ul className="bg-white rounded-2xl shadow-xl border border-blue-50 divide-y divide-blue-50"> {/* Added card styling to the list */}
                     {filteredStudents.map(student => (
                         <li
                             key={student.id}
                             onClick={() => onSelectStudent(student, 'full')} // Default to 'full' view for All Students
-                            className="py-4 px-3 flex items-center transition duration-200 ease-in-out hover:bg-blue-50 rounded-xl cursor-pointer -mx-3"
+                            className="py-4 px-3 flex items-center justify-between transition duration-200 ease-in-out hover:bg-blue-50 rounded-xl cursor-pointer -mx-3"
                         >
-                            <GraduationCap className="w-6 h-6 mr-3 text-blue-600 flex-shrink-0 drop-shadow-sm" />
-                            <div className="flex-1 overflow-hidden">
-                                <p className="text-lg font-semibold text-gray-900 truncate">{student.name}</p>
-                                <p className="text-sm text-gray-500 mt-1">
-                                    <span className="font-semibold mr-1">Roll No.:</span> {student.id}
-                                </p>
+                            <div className="flex items-center flex-1 min-w-0"> {/* Flex container for icon and text */}
+                                <GraduationCap className="w-6 h-6 mr-3 text-blue-600 flex-shrink-0 drop-shadow-sm" />
+                                <div className="flex-1 overflow-hidden">
+                                    <p className="text-lg font-semibold text-gray-900 truncate">
+                                        <span className="font-normal mr-1 text-base">{currentLanguage === 'en' ? 'Roll No.:' : 'رول نمبر:'}</span> <span className="font-normal text-base">{student.id}</span> - {student.name}
+                                    </p>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                        {student.address || 'N/A'}
+                                    </p>
+                                </div>
                             </div>
                         </li>
                     ))}
@@ -227,22 +221,32 @@ interface AddStudentFormProps {
         monthly_fee: number;
     }) => Promise<void>;
     setError: (message: string | null) => void;
+    currentLanguage: 'en' | 'ur'; // Added for language support
 }
 
-const AddStudentForm: React.FC<AddStudentFormProps> = ({ handleAddStudent, setError }) => {
+const AddStudentForm: React.FC<AddStudentFormProps> = ({ handleAddStudent, setError, currentLanguage }) => {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD for default date input
+
     const [name, setName] = useState<string>('');
     const [address, setAddress] = useState<string>('');
     const [phone, setPhone] = useState<string>('');
-    const [admissionDate, setAdmissionDate] = useState<string>('');
+    const [admissionDate, setAdmissionDate] = useState<string>(today); // Default to today's date
     const [initialPaidTill, setInitialPaidTill] = useState<string>('');
     const [monthlyFee, setMonthlyFee] = useState<string>('');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name || !admissionDate || !initialPaidTill || monthlyFee === '') {
-            setError("Please fill in Name, Admission Date, Initial Paid Till date, and Monthly Fee.");
+            setError(currentLanguage === 'en' ? "Please fill in Name, Admission Date, Initial Paid Till date, and Monthly Fee." : "براہ کرم نام، داخلہ کی تاریخ، ابتدائی ادائیگی کی تاریخ تک، اور ماہانہ فیس پُر کریں۔");
             return;
         }
+
+        // Validate initialPaidTill date is not less than admissionDate
+        if (new Date(initialPaidTill) < new Date(admissionDate)) {
+            setError(currentLanguage === 'en' ? "Initial Paid Till Date cannot be earlier than Admission Date." : "ابتدائی ادائیگی کی تاریخ داخلہ کی تاریخ سے پہلے نہیں ہو سکتی۔");
+            return;
+        }
+
         await handleAddStudent({
             name,
             address: address || null,
@@ -254,64 +258,64 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ handleAddStudent, setEr
         setName('');
         setAddress('');
         setPhone('');
-        setAdmissionDate('');
+        setAdmissionDate(today); // Reset to today
         setInitialPaidTill('');
         setMonthlyFee('');
     };
 
     return (
         <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full max-w-xl border border-blue-50">
-            <h2 className="text-2xl font-bold mb-5 text-gray-800 text-center">Add New Student</h2>
+            <h2 className="text-2xl font-bold mb-5 text-gray-800 text-center">{currentLanguage === 'en' ? 'Add New Student' : 'نیا طالب علم شامل کریں'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700">Student Name</label>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700">{currentLanguage === 'en' ? 'Student Name' : 'طالب علم کا نام'}</label>
                     <input
                         type="text"
                         id="name"
                         className="mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="e.g., Emily White"
+                        placeholder={currentLanguage === 'en' ? "e.g., Emily White" : "مثلاً، ایملی وائٹ"}
                         required
                     />
                 </div>
                 <div>
-                    <label htmlFor="address" className="block text-sm font-medium text-gray-700">Address (Optional)</label>
+                    <label htmlFor="address" className="block text-sm font-medium text-gray-700">{currentLanguage === 'en' ? 'Address (Optional)' : 'پتہ (اختیاری)'}</label>
                     <input
                         type="text"
                         id="address"
                         className="mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
-                        placeholder="e.g., 45 Elm Street, Apt 3B"
+                        placeholder={currentLanguage === 'en' ? "e.g., 45 Elm Street, Apt 3B" : "مثلاً، 45 ایلم اسٹریٹ، اپارٹمنٹ 3 بی"}
                     />
                 </div>
                 <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Phone (for reminders)</label>
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">{currentLanguage === 'en' ? 'Phone (for reminders)' : 'فون (یاد دہانیوں کے لیے)'}</label>
                     <input
                         type="tel"
                         id="phone"
                         className="mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        placeholder="e.g., +919876543210"
+                        placeholder={currentLanguage === 'en' ? "e.g., +919876543210" : "مثلاً، +919876543210"}
                     />
                 </div>
                 <div>
-                    <label htmlFor="monthlyFee" className="block text-sm font-medium text-gray-700">Monthly Fee (₹)</label>
+                    <label htmlFor="monthlyFee" className="block text-sm font-medium text-gray-700">{currentLanguage === 'en' ? 'Monthly Fee (₹)' : 'ماہانہ فیس (₹)'}</label>
                     <input
                         type="number"
                         id="monthlyFee"
                         className="mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                         value={monthlyFee}
                         onChange={(e) => setMonthlyFee(e.target.value)}
-                        placeholder="e.g., 2000.00"
+                        placeholder={currentLanguage === 'en' ? "e.g., 2000.00" : "مثلاً، 2000.00"}
                         step="0.01"
                         required
                     />
                 </div>
                 <div>
-                    <label htmlFor="admissionDate" className="block text-sm font-medium text-gray-700">Admission Date</label>
+                    <label htmlFor="admissionDate" className="block text-sm font-medium text-gray-700">{currentLanguage === 'en' ? 'Admission Date' : 'داخلہ کی تاریخ'}</label>
                     <input
                         type="date"
                         id="admissionDate"
@@ -322,7 +326,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ handleAddStudent, setEr
                     />
                 </div>
                 <div>
-                    <label htmlFor="initialPaidTill" className="block text-sm font-medium text-gray-700">Initial Paid Till Date</label>
+                    <label htmlFor="initialPaidTill" className="block text-sm font-medium text-gray-700">{currentLanguage === 'en' ? 'Initial Paid Till Date' : 'ابتدائی ادائیگی کی تاریخ تک'}</label>
                     <input
                         type="date"
                         id="initialPaidTill"
@@ -336,7 +340,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ handleAddStudent, setEr
                     type="submit"
                     className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out text-lg tracking-wide transform hover:scale-105 active:scale-95"
                 >
-                    Add Student
+                    {currentLanguage === 'en' ? 'Add Student' : 'طالب علم شامل کریں'}
                 </button>
             </form>
         </div>
@@ -363,21 +367,15 @@ interface StudentDetailProps {
 
 const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpdatePayment, onBackToList, handleDeleteStudent, setError, setSuccessMessage, pendingDataForStudent, viewMode, currentLanguage }) => {
     const [newPaidTill, setNewPaidTill] = useState<string>('');
-    const [isBiodataOpen, setIsBiodataOpen] = useState(false); // Collapsed by default
-    const [isPaymentInfoOpen, setIsPaymentInfoOpen] = useState(false); // Collapsed by default
+    // Initial collapse state based on viewMode
+    const [isBiodataOpen, setIsBiodataOpen] = useState(viewMode === 'full');
+    const [isCurrentPendingOpen, setIsCurrentPendingOpen] = useState(viewMode === 'pending-summary');
+    const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(viewMode === 'pending-summary');
+    const [isUpdatePaymentOpen, setIsUpdatePaymentOpen] = useState(viewMode === 'pending-summary');
+    const [isReminderSectionOpen, setIsReminderSectionOpen] = useState(viewMode === 'pending-summary');
+
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deletePassword, setDeletePassword] = useState('');
-
-    useEffect(() => {
-        // Set initial collapse state based on viewMode
-        if (viewMode === 'full') {
-            setIsBiodataOpen(true);
-            setIsPaymentInfoOpen(false);
-        } else if (viewMode === 'pending-summary') {
-            setIsBiodataOpen(false);
-            setIsPaymentInfoOpen(true);
-        }
-    }, [viewMode]);
 
     const handleUpdateSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -389,6 +387,14 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpda
         setNewPaidTill('');
     };
 
+    const calculateNewPaidTill = (months: number) => {
+        const lastPaid = pendingDataForStudent.paid_till ? new Date(pendingDataForStudent.paid_till) : new Date(student.admission_date);
+        lastPaid.setMonth(lastPaid.getMonth() + months);
+        // Set to the last day of the month to avoid issues with short months
+        lastPaid.setDate(new Date(lastPaid.getFullYear(), lastPaid.getMonth() + 1, 0).getDate());
+        setNewPaidTill(lastPaid.toISOString().split('T')[0]);
+    };
+
     const handleClickWhatsAppReminder = () => {
         if (!student.phone) {
             setError(currentLanguage === 'en' ? `No phone number for ${student.name}.` : `${student.name} کے لیے کوئی فون نمبر نہیں ہے۔`);
@@ -396,8 +402,8 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpda
         }
         const message = encodeURIComponent(
             currentLanguage === 'en'
-                ? `Dear ${student.name}, this is a reminder regarding your pending fees of ₹${student.pending_amount} for ${student.pending_months} months. Last paid till: ${student.paid_till ? new Date(student.paid_till).toLocaleDateString() : 'N/A'}. Please clear your dues. Thank you.`
-                : `عزیز ${student.name}، یہ آپ کی زیر التواء فیس ₹${student.pending_amount} کے بارے میں ایک یاد دہانی ہے جو ${student.pending_months} مہینوں کے لیے باقی ہے۔ آخری ادائیگی کی تاریخ: ${student.paid_till ? new Date(student.paid_till).toLocaleDateString('ar-u-nu-arab') : 'دستیاب نہیں'}۔ براہ کرم اپنی واجبات صاف کریں۔ شکریہ۔`
+                ? `Dear ${student.name}, this is a reminder regarding your pending fees of ₹${student.pending_amount} for ${student.pending_months} months. Last paid till: ${formatDate(student.paid_till)}. Please clear your dues. Thank you.`
+                : `عزیز ${student.name}، یہ آپ کی زیر التواء فیس ₹${student.pending_amount} کے بارے میں ایک یاد دہانی ہے جو ${student.pending_months} مہینوں کے لیے باقی ہے۔ آخری ادائیگی کی تاریخ: ${formatDate(student.paid_till)}۔ براہ کرم اپنی واجبات صاف کریں۔ شکریہ۔`
         );
         window.open(`https://wa.me/${student.phone}?text=${message}`, '_blank');
         setSuccessMessage(currentLanguage === 'en' ? `WhatsApp reminder simulated for ${student.name}.` : `${student.name} کے لیے واٹس ایپ یاد دہانی بھیجی گئی۔`);
@@ -410,8 +416,8 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpda
         }
         const message = encodeURIComponent(
             currentLanguage === 'en'
-                ? `Reminder: Dear ${student.name}, your pending fees are ₹${student.pending_amount}. Last paid till: ${student.paid_till ? new Date(student.paid_till).toLocaleDateString() : 'N/A'}. Please pay soon. Thank you.`
-                : `یاد دہانی: عزیز ${student.name}، آپ کی زیر التواء فیس ₹${student.pending_amount} ہے۔ آخری ادائیگی کی تاریخ: ${student.paid_till ? new Date(student.paid_till).toLocaleDateString('ar-u-nu-arab') : 'دستیاب نہیں'}۔ براہ کرم جلد ادائیگی کریں۔ شکریہ۔`
+                ? `Reminder: Dear ${student.name}, your pending fees are ₹${student.pending_amount}. Last paid till: ${formatDate(student.paid_till)}. Please pay soon. Thank you.`
+                : `یاد دہانی: عزیز ${student.name}، آپ کی زیر التواء فیس ₹${student.pending_amount} ہے۔ آخری ادائیگی کی تاریخ: ${formatDate(student.paid_till)}۔ براہ کرم جلد ادائیگی کریں۔ شکریہ۔`
         );
         window.open(`sms:${student.phone}?body=${message}`, '_blank');
         setSuccessMessage(currentLanguage === 'en' ? `SMS reminder simulated for ${student.name}.` : `${student.name} کے لیے ایس ایم ایس یاد دہانی بھیجی گئی۔`);
@@ -419,7 +425,7 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpda
 
     const handleDeleteClick = () => {
         setShowDeleteConfirm(true);
-        setDeletePassword(''); // Clear password field
+        setDeletePassword('');
     };
 
     const handleConfirmDelete = async () => {
@@ -430,92 +436,26 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpda
         await handleDeleteStudent(student.id, student.name, deletePassword);
         setShowDeleteConfirm(false);
         setDeletePassword('');
-        // After successful deletion, the parent component (App.tsx) will navigate back
     };
 
-    if (viewMode === 'pending-summary') {
-        return (
-            <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full max-w-xl border border-blue-50">
-                <h2 className="text-2xl font-bold mb-5 text-gray-800 text-center">
-                    {currentLanguage === 'en' ? 'Student Details:' : 'طالب علم کی تفصیلات:'} {student.name}
-                </h2>
-                <p className="text-sm text-gray-500 text-center mb-6">
-                    {currentLanguage === 'en' ? 'Roll No.:' : 'رول نمبر:'} {student.id}
-                </p>
-
-                {pendingDataForStudent && (
-                    <div className="bg-red-50 p-4 rounded-xl shadow-inner mb-6 space-y-2 text-gray-700 text-base border border-red-100">
-                        <p className="text-red-600 font-bold text-lg flex items-center"><XCircle className="w-6 h-6 mr-3" />
-                            <span className="font-semibold">{currentLanguage === 'en' ? 'Current Pending:' : 'موجودہ زیر التواء:'}</span> ₹{pendingDataForStudent.pending_amount} ({pendingDataForStudent.pending_months} {currentLanguage === 'en' ? 'months' : 'مہینے'})
-                        </p>
-                        <p className="text-sm text-gray-600 flex items-center pl-9"><CheckCircle className="w-4 h-4 mr-2 text-green-500" />
-                            {currentLanguage === 'en' ? 'Last Paid Till:' : 'آخری ادائیگی کی تاریخ:'} {pendingDataForStudent.paid_till ? new Date(pendingDataForStudent.paid_till).toLocaleDateString() : 'N/A'}
-                        </p>
-                    </div>
-                )}
-
-                <h3 className="text-lg font-bold mb-3 text-gray-800 border-b-2 border-gray-100 pb-2 flex items-center">
-                    <DollarSign className="w-6 h-6 mr-3 text-gray-600" />
-                    {currentLanguage === 'en' ? 'Update Payment' : 'ادائیگی اپ ڈیٹ کریں'}
-                </h3>
-                <form onSubmit={handleUpdateSubmit} className="space-y-4 mb-6">
-                    <div>
-                        <label htmlFor="newPaidTill" className="block text-sm font-medium text-gray-700">
-                            {currentLanguage === 'en' ? 'New Paid Till Date' : 'نئی ادائیگی کی تاریخ تک'}
-                        </label>
-                        <input
-                            type="date"
-                            id="newPaidTill"
-                            className="mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
-                            value={newPaidTill}
-                            onChange={(e) => setNewPaidTill(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out text-lg tracking-wide transform hover:scale-105 active:scale-95"
-                    >
-                        {currentLanguage === 'en' ? 'Update Payment' : 'ادائیگی اپ ڈیٹ کریں'}
-                    </button>
-                </form>
-
-                <h3 className="text-lg font-bold mb-3 text-gray-800 border-b-2 border-gray-100 pb-2 flex items-center">
-                    <BellRing className="w-6 h-6 mr-3 text-gray-600" />
-                    {currentLanguage === 'en' ? 'Send Reminder' : 'یاد دہانی بھیجیں'}
-                </h3>
-                <div className="flex gap-4 mb-6">
-                    <button
-                        onClick={handleClickWhatsAppReminder}
-                        className="flex-1 flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 active:scale-95"
-                    >
-                        <MessageSquare className="w-5 h-5 mr-2" /> WhatsApp
-                    </button>
-                    <button
-                        onClick={handleClickSMSReminder}
-                        className="flex-1 flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 active:scale-95"
-                    >
-                        <MessageSquareText className="w-5 h-5 mr-2" /> SMS
-                    </button>
-                </div>
-
-                <button
-                    onClick={onBackToList}
-                    className="mt-6 w-full bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out text-lg tracking-wide transform hover:scale-105 active:scale-95"
-                >
-                    {currentLanguage === 'en' ? 'Back to All Students' : 'تمام طلباء پر واپس جائیں'}
-                </button>
-            </div>
-        );
-    }
+    const isFeesCleared = student.pending_amount === 0 || student.pending_amount === undefined;
 
     return (
         <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full max-w-xl border border-blue-50">
-            <h2 className="text-2xl font-bold mb-5 text-gray-800 text-center">
-                {currentLanguage === 'en' ? 'Student Details:' : 'طالب علم کی تفصیلات:'} {student.name}
+             {/* Back to List Arrow Icon - Top position */}
+            <button
+                onClick={onBackToList}
+                className="absolute top-4 left-4 p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition duration-150 shadow-md"
+                title={currentLanguage === 'en' ? 'Back to list' : 'فہرست پر واپس جائیں'}
+            >
+                <ArrowLeftCircle className="w-6 h-6 text-gray-700" />
+            </button>
+
+            <h2 className="text-2xl font-bold mb-2 text-gray-800 text-center">
+                {student.name} <span className="font-normal text-base text-gray-500">({currentLanguage === 'en' ? 'Roll No.:' : 'رول نمبر:'} {student.id})</span>
             </h2>
             <p className="text-sm text-gray-500 text-center mb-6">
-                {currentLanguage === 'en' ? 'Roll No.:' : 'رول نمبر:'} {student.id}
+                {currentLanguage === 'en' ? 'Monthly Fee:' : 'ماہانہ فیس:'} ₹{student.monthly_fee}
             </p>
 
             {/* Student Biodata Section */}
@@ -530,23 +470,60 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpda
                 {isBiodataOpen && (
                     <div className="p-4 space-y-2 text-gray-700 text-base border-t border-gray-200">
                         <p className="flex items-center"><MapPin className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Address:' : 'پتہ:'}</span> {student.address || 'N/A'}</p>
-                        <p className="flex items-center"><Phone className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Phone:' : 'فون:'}</span> {student.phone || 'N/A'}</p>
-                        <p className="flex items-center"><CalendarDays className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Admission Date:' : 'داخلہ کی تاریخ:'}</span> {student.admission_date ? new Date(student.admission_date).toLocaleDateString() : 'N/A'}</p>
+                        <p className="flex items-center"><Phone className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Phone:' : 'فون:'}</span> <a href={`tel:${student.phone}`} className="text-blue-600 hover:underline">{student.phone || 'N/A'}</a></p>
+                        <p className="flex items-center"><CalendarDays className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Admission Date:' : 'داخلہ کی تاریخ:'}</span> {formatDate(student.admission_date)}</p>
                         <p className="flex items-center"><DollarSign className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Monthly Fee:' : 'ماہانہ فیس:'}</span> ₹{student.monthly_fee}</p>
                     </div>
                 )}
             </div>
 
-            {/* Payment History Section (Always shown in full view) */}
+            {/* Current Pending/Cleared Information Section */}
             <div className="border border-gray-200 rounded-xl mb-4 overflow-hidden shadow-sm">
                 <button
                     className="w-full flex justify-between items-center bg-blue-50 p-4 font-semibold text-gray-700 hover:bg-blue-100 transition duration-150"
-                    onClick={() => setIsPaymentInfoOpen(!isPaymentInfoOpen)}
+                    onClick={() => setIsCurrentPendingOpen(!isCurrentPendingOpen)}
+                >
+                    {currentLanguage === 'en' ? 'Current Status' : 'موجودہ حیثیت'}
+                    {isCurrentPendingOpen ? <ChevronUp className="w-5 h-5 text-gray-600" /> : <ChevronDown className="w-5 h-5 text-gray-600" />}
+                </button>
+                {isCurrentPendingOpen && (
+                    <div className="p-4 border-t border-gray-200">
+                        {isFeesCleared ? (
+                            <div className="bg-green-50 p-4 rounded-xl shadow-inner mb-6 space-y-2 text-gray-700 text-base border border-green-100 flex items-center flex-wrap">
+                                <CheckCircle className="w-8 h-8 mr-3 text-green-600 flex-shrink-0" />
+                                <p className="font-bold text-lg text-green-700 flex-grow">
+                                    {currentLanguage === 'en' ? 'Fees Cleared!' : 'فیس صاف شدہ!'}
+                                </p>
+                                <p className="text-sm text-gray-600 flex-grow-0 w-full pl-11">
+                                    {currentLanguage === 'en' ? 'Last Paid Till:' : 'آخری ادائیگی کی تاریخ تک:'} {formatDate(pendingDataForStudent.paid_till)}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="bg-red-50 p-4 rounded-xl shadow-inner mb-6 space-y-2 text-gray-700 text-base border border-red-100 flex items-center flex-wrap">
+                                <XCircle className="w-8 h-8 mr-3 text-red-600 flex-shrink-0" />
+                                <p className="font-bold text-lg text-red-700 flex-grow">
+                                    {currentLanguage === 'en' ? 'Pending:' : 'باقی:'} ₹{pendingDataForStudent.pending_amount}
+                                    <span className="font-normal text-sm ml-2">({pendingDataForStudent.pending_months} {currentLanguage === 'en' ? 'months' : 'مہینے'})</span>
+                                </p>
+                                <p className="text-sm text-gray-600 flex-grow-0 w-full pl-11">
+                                    {currentLanguage === 'en' ? 'Last Paid Till:' : 'آخری ادائیگی کی تاریخ تک:'} {formatDate(pendingDataForStudent.paid_till)}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Payment History Section */}
+            <div className="border border-gray-200 rounded-xl mb-4 overflow-hidden shadow-sm">
+                <button
+                    className="w-full flex justify-between items-center bg-blue-50 p-4 font-semibold text-gray-700 hover:bg-blue-100 transition duration-150"
+                    onClick={() => setIsPaymentHistoryOpen(!isPaymentHistoryOpen)}
                 >
                     {currentLanguage === 'en' ? 'Payment History' : 'ادائیگی کی تاریخ'}
-                    {isPaymentInfoOpen ? <ChevronUp className="w-5 h-5 text-gray-600" /> : <ChevronDown className="w-5 h-5 text-gray-600" />}
+                    {isPaymentHistoryOpen ? <ChevronUp className="w-5 h-5 text-gray-600" /> : <ChevronDown className="w-5 h-5 text-gray-600" />}
                 </button>
-                {isPaymentInfoOpen && (
+                {isPaymentHistoryOpen && (
                     <div className="p-4 border-t border-gray-200">
                         {payments && payments.length === 0 ? (
                             <p className="text-gray-600 py-4 text-center">{currentLanguage === 'en' ? 'No payment records found for this student.' : 'اس طالب علم کے لیے کوئی ادائیگی ریکارڈ نہیں ملا۔'}</p>
@@ -554,7 +531,7 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpda
                             <ul className="divide-y divide-gray-100 mb-6">
                                 {payments && payments.map(payment => (
                                     <li key={payment.id} className="py-2 text-gray-700 text-base flex items-center">
-                                        <CheckCircle className="w-5 h-5 mr-3 text-green-500" />{currentLanguage === 'en' ? 'Paid Till:' : 'ادائیگی کی تاریخ تک:'} {payment.paid_till ? new Date(payment.paid_till).toLocaleDateString() : 'N/A'}
+                                        <CheckCircle className="w-5 h-5 mr-3 text-green-500" />{currentLanguage === 'en' ? 'Paid Till:' : 'ادائیگی کی تاریخ تک:'} {formatDate(payment.paid_till)}
                                     </li>
                                 ))}
                             </ul>
@@ -563,13 +540,101 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpda
                 )}
             </div>
 
-            {/* Delete Student Button */}
-            <button
-                onClick={handleDeleteClick}
-                className="mt-6 w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out text-lg tracking-wide transform hover:scale-105 active:scale-95"
-            >
-                {currentLanguage === 'en' ? 'Delete Student' : 'طالب علم حذف کریں'}
-            </button>
+            {/* Update Payment Section */}
+            <div className="border border-gray-200 rounded-xl mb-4 overflow-hidden shadow-sm">
+                <button
+                    className="w-full flex justify-between items-center bg-blue-50 p-4 font-semibold text-gray-700 hover:bg-blue-100 transition duration-150"
+                    onClick={() => setIsUpdatePaymentOpen(!isUpdatePaymentOpen)}
+                >
+                    {currentLanguage === 'en' ? 'Update Payment' : 'ادائیگی اپ ڈیٹ کریں'}
+                    {isUpdatePaymentOpen ? <ChevronUp className="w-5 h-5 text-gray-600" /> : <ChevronDown className="w-5 h-5 text-gray-600" />}
+                </button>
+                {isUpdatePaymentOpen && (
+                    <div className="p-4 border-t border-gray-200">
+                        <div className="flex flex-wrap gap-2 justify-center mb-4">
+                            <button
+                                onClick={() => calculateNewPaidTill(3)}
+                                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition duration-150 ease-in-out flex-1 min-w-[100px] sm:flex-none"
+                            >
+                                {currentLanguage === 'en' ? 'Clear 3 Months' : '3 ماہ کی ادائیگی'}
+                            </button>
+                            <button
+                                onClick={() => calculateNewPaidTill(6)}
+                                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition duration-150 ease-in-out flex-1 min-w-[100px] sm:flex-none"
+                            >
+                                {currentLanguage === 'en' ? 'Clear 6 Months' : '6 ماہ کی ادائیگی'}
+                            </button>
+                            <button
+                                onClick={() => calculateNewPaidTill(12)}
+                                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition duration-150 ease-in-out flex-1 min-w-[100px] sm:flex-none"
+                            >
+                                {currentLanguage === 'en' ? 'Clear 1 Year' : '1 سال کی ادائیگی'}
+                            </button>
+                        </div>
+                        <form onSubmit={handleUpdateSubmit} className="space-y-4">
+                            <div>
+                                <label htmlFor="newPaidTill" className="block text-sm font-medium text-gray-700">
+                                    {currentLanguage === 'en' ? 'Custom Paid Till Date' : 'حسب ضرورت ادائیگی کی تاریخ تک'}
+                                </label>
+                                <input
+                                    type="date"
+                                    id="newPaidTill"
+                                    className="mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+                                    value={newPaidTill}
+                                    onChange={(e) => setNewPaidTill(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out text-lg tracking-wide transform hover:scale-105 active:scale-95"
+                            >
+                                {currentLanguage === 'en' ? 'Update Payment' : 'ادائیگی اپ ڈیٹ کریں'}
+                            </button>
+                        </form>
+                    </div>
+                )}
+            </div>
+
+            {/* Send Reminder Section */}
+            <div className="border border-gray-200 rounded-xl mb-4 overflow-hidden shadow-sm">
+                <button
+                    className="w-full flex justify-between items-center bg-blue-50 p-4 font-semibold text-gray-700 hover:bg-blue-100 transition duration-150"
+                    onClick={() => setIsReminderSectionOpen(!isReminderSectionOpen)}
+                >
+                    {currentLanguage === 'en' ? 'Send Reminder' : 'یاد دہانی بھیجیں'}
+                    {isReminderSectionOpen ? <ChevronUp className="w-5 h-5 text-gray-600" /> : <ChevronDown className="w-5 h-5 text-gray-600" />}
+                </button>
+                {isReminderSectionOpen && (
+                    <div className="p-4 border-t border-gray-200">
+                        <div className="flex gap-4 mb-6">
+                            <button
+                                onClick={handleClickWhatsAppReminder}
+                                className="flex-1 flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 active:scale-95"
+                            >
+                                <MessageSquare className="w-5 h-5 mr-2" /> WhatsApp
+                            </button>
+                            <button
+                                onClick={handleClickSMSReminder}
+                                className="flex-1 flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 active:scale-95"
+                            >
+                                <MessageSquareText className="w-5 h-5 mr-2" /> SMS
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+
+            {/* Delete Student Button (Only shown in full view) */}
+            {viewMode === 'full' && (
+                <button
+                    onClick={handleDeleteClick}
+                    className="mt-6 w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out text-lg tracking-wide transform hover:scale-105 active:scale-95"
+                >
+                    {currentLanguage === 'en' ? 'Delete Student' : 'طالب علم حذف کریں'}
+                </button>
+            )}
 
             {/* Delete Confirmation Modal */}
             {showDeleteConfirm && (
@@ -611,15 +676,17 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpda
 // Dashboard.tsx
 interface DashboardProps {
     students: Student[] | null;
-    allPayments: Payment[] | null; // Renamed to allPayments for clarity
+    currentLanguage: 'en' | 'ur'; // Added for language support
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ students, allPayments }) => {
+const Dashboard: React.FC<DashboardProps> = ({ students, currentLanguage }) => {
     if (!students || students.length === 0) {
         return (
-            <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full max-w-xl border border-blue-50 text-center text-gray-600">
-                <BarChart2 className="w-12 h-12 mx-auto mb-4 text-blue-300" />
-                <p className="text-lg font-medium">No student data available for the dashboard.</p>
+            <div className="p-6 rounded-2xl mb-6 mx-auto w-full max-w-xl"> {/* Removed bg-white, shadow, border */}
+                <div className="bg-blue-50 p-6 rounded-xl shadow-inner text-center text-gray-600">
+                    <BarChart2 className="w-12 h-12 mx-auto mb-4 text-blue-300" />
+                    <p className="text-lg font-medium">{currentLanguage === 'en' ? 'No student data available for the dashboard.' : 'ڈیش بورڈ کے لیے کوئی طالب علم ڈیٹا دستیاب نہیں ہے۔'}</p>
+                </div>
             </div>
         );
     }
@@ -630,53 +697,38 @@ const Dashboard: React.FC<DashboardProps> = ({ students, allPayments }) => {
     const totalStudents = students.length;
     const pendingStudentsCount = students.filter(s => s.pending_amount && s.pending_amount > 0).length;
     const clearedStudentsCount = totalStudents - pendingStudentsCount;
+    const totalPendingAmount = students.reduce((sum, student) => sum + (student.pending_amount || 0), 0);
+
 
     const pieData = [
-        { name: 'Cleared Fees', value: clearedStudentsCount },
-        { name: 'Pending Fees', value: pendingStudentsCount },
+        { name: currentLanguage === 'en' ? 'Cleared Fees' : 'صاف شدہ فیس', value: clearedStudentsCount },
+        { name: currentLanguage === 'en' ? 'Pending Fees' : 'زیر التواء فیس', value: pendingStudentsCount },
     ];
     const PIE_COLORS = ['#82ca9d', '#ff7300']; // Green for cleared, Orange for pending
 
-    // 2. Monthly Fee Distribution (Bar Chart)
-    const feeDistributionMap = new Map<number, number>();
-    students.forEach(student => {
-        const fee = Math.floor(student.monthly_fee / 100) * 100; // Group by hundreds
-        feeDistributionMap.set(fee, (feeDistributionMap.get(fee) || 0) + 1);
-    });
-    const feeDistributionData = Array.from(feeDistributionMap.entries())
-        .map(([fee, count]) => ({ fee, count }))
-        .sort((a, b) => a.fee - b.fee);
-
-    // 3. Payments per Month (Line Chart)
-    const paymentsPerMonthMap = new Map<string, number>(); // Key:,"%Y-%m"
-    allPayments?.forEach(payment => {
-        const date = new Date(payment.paid_till);
-        const yearMonth = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-        paymentsPerMonthMap.set(yearMonth, (paymentsPerMonthMap.get(yearMonth) || 0) + 1);
-    });
-
-    const paymentsPerMonthData = Array.from(paymentsPerMonthMap.entries())
-        .map(([month, count]) => ({ month, count }))
-        .sort((a, b) => a.month.localeCompare(b.month)); // Sort chronologically
 
     // --- Render Dashboard ---
     return (
         <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full max-w-2xl border border-blue-50">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800 text-center">Data Dashboard</h2>
+            <h2 className="text-2xl font-bold mb-6 text-gray-800 text-center">{currentLanguage === 'en' ? 'Data Dashboard' : 'ڈیٹا ڈیش بورڈ'}</h2>
 
             {/* Key Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"> {/* Changed to 2 or 4 columns for horizontal stacking */}
                 <div className="bg-blue-50 p-5 rounded-xl shadow-md text-center border border-blue-100">
                     <p className="text-xl font-bold text-blue-700">{totalStudents}</p>
-                    <p className="text-sm text-gray-600">Total Students</p>
+                    <p className="text-sm text-gray-600">{currentLanguage === 'en' ? 'Total Students' : 'کل طلباء'}</p>
                 </div>
                 <div className="bg-red-50 p-5 rounded-xl shadow-md text-center border border-red-100">
                     <p className="text-xl font-bold text-red-700">{pendingStudentsCount}</p>
-                    <p className="text-sm text-gray-600">Students with Pending Fees</p>
+                    <p className="text-sm text-gray-600">{currentLanguage === 'en' ? 'Students with Pending Fees' : 'زیر التواء فیس والے طلباء'}</p>
                 </div>
                 <div className="bg-green-50 p-5 rounded-xl shadow-md text-center border border-green-100">
                     <p className="text-xl font-bold text-green-700">{clearedStudentsCount}</p>
-                    <p className="text-sm text-gray-600">Students with Cleared Fees</p>
+                    <p className="text-sm text-gray-600">{currentLanguage === 'en' ? 'Students with Cleared Fees' : 'صاف شدہ فیس والے طلباء'}</p>
+                </div>
+                <div className="bg-yellow-50 p-5 rounded-xl shadow-md text-center border border-yellow-100">
+                    <p className="text-xl font-bold text-yellow-700">₹{totalPendingAmount.toFixed(2)}</p>
+                    <p className="text-sm text-gray-600">{currentLanguage === 'en' ? 'Total Pending Amount' : 'کل زیر التواء رقم'}</p>
                 </div>
             </div>
 
@@ -685,7 +737,7 @@ const Dashboard: React.FC<DashboardProps> = ({ students, allPayments }) => {
                 {/* Pending vs Cleared Pie Chart */}
                 <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-5 rounded-xl shadow-md border border-purple-100">
                     <h3 className="text-lg font-bold mb-4 text-gray-800 text-center flex items-center justify-center">
-                        <PieChart className="w-5 h-5 mr-2 text-purple-600" /> Pending vs. Cleared Students
+                        <PieChart className="w-5 h-5 mr-2 text-purple-600" /> {currentLanguage === 'en' ? 'Pending vs. Cleared Students' : 'زیر التواء بمقابلہ صاف شدہ طلباء'}
                     </h3>
                     <ResponsiveContainer width="100%" height={300}>
                         <RechartsPieChart>
@@ -702,45 +754,9 @@ const Dashboard: React.FC<DashboardProps> = ({ students, allPayments }) => {
                                     <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                                 ))}
                             </Pie>
-                            <Tooltip formatter={(value, name) => [`${value} students`, name]} />
+                            <Tooltip formatter={(value, name) => [`${value} ${currentLanguage === 'en' ? 'students' : 'طلباء'}`, name]} />
                             <Legend />
                         </RechartsPieChart>
-                    </ResponsiveContainer>
-                </div>
-
-                {/* Monthly Fee Distribution Bar Chart */}
-                <div className="bg-gradient-to-br from-teal-50 to-blue-50 p-5 rounded-xl shadow-md border border-teal-100">
-                    <h3 className="text-lg font-bold mb-4 text-gray-800 text-center flex items-center justify-center">
-                        <BarChart2 className="w-5 h-5 mr-2 text-teal-600" /> Monthly Fee Distribution
-                    </h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <BarChart
-                            data={feeDistributionData}
-                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
-                            <XAxis dataKey="fee" label={{ value: "Monthly Fee (₹)", position: "insideBottom", offset: 0, dy: 10 }} />
-                            <YAxis label={{ value: "Number of Students", angle: -90, position: "insideLeft", dx: -10 }} />
-                            <Tooltip formatter={(value, name) => [value, `Students with ₹${name} Fee`]} />
-                            <Bar dataKey="count" fill="#8884d8" name="Students" radius={[10, 10, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-
-                {/* Payments Over Time Line Chart */}
-                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-5 rounded-xl shadow-md border border-indigo-100">
-                    <h3 className="text-lg font-bold mb-4 text-gray-800 text-center flex items-center justify-center">
-                        <TrendingUp className="w-5 h-5 mr-2 text-indigo-600" /> Payments Over Time
-                    </h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <LineChart
-                            data={paymentsPerMonthData}
-                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                        >
-                            <XAxis dataKey="month" label={{ value: "Month", position: "insideBottom", offset: 0, dy: 10 }} />
-                            <YAxis label={{ value: "Number of Payments", angle: -90, position: "insideLeft", dx: -10 }} />
-                            <Tooltip formatter={(value, name) => [value, `Payments in ${name}`]} />
-                            <Line type="monotone" dataKey="count" stroke="#8884d8" activeDot={{ r: 8 }} />
-                        </LineChart>
                     </ResponsiveContainer>
                 </div>
             </div>
@@ -759,6 +775,7 @@ interface ReminderListProps {
 const ReminderList: React.FC<ReminderListProps> = ({ allStudents, setError, setSuccessMessage, currentLanguage }) => {
     const [reminderPeriod, setReminderPeriod] = useState<string>('all_pending'); // '1_week', '2_weeks', '1_month', 'all_pending'
     const [searchTerm, setSearchTerm] = useState<string>(''); // For search filter
+    const [selectedStudents, setSelectedStudents] = useState<number[]>([]); // To store IDs of selected students
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -768,52 +785,74 @@ const ReminderList: React.FC<ReminderListProps> = ({ allStudents, setError, setS
         const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase());
         if (!matchesSearch) return false;
 
-        // Filter by pending status
-        if (!(student.pending_amount && student.pending_amount > 0)) {
-            return false; // Only show students with pending amounts
-        }
-
-        // Filter by reminder period
+        // Determine the actual next due date based on paid_till or admission_date
         const lastPaidDate = student.paid_till ? new Date(student.paid_till) : new Date(student.admission_date);
-        lastPaidDate.setHours(0, 0, 0, 0); // Normalize to start of day
+        lastPaidDate.setHours(0, 0, 0, 0);
 
-        // If no paid_till, we can consider current month as pending
-        // The `pending_months` and `pending_amount` calculated by backend already reflect this
-        // We want to find those whose _next_ payment is due soon, or who are already overdue.
-        // The `paid_till` date indicates when their last payment covered.
-        // So, if paid_till is "2024-05-31", then 2024-06-01 is the start of pending.
-
-        // Calculate the first day of the month after the last paid date
         let nextPaymentDueDate = new Date(lastPaidDate);
-        nextPaymentDueDate.setDate(1); // Set to 1st to avoid issues with month lengths
-        nextPaymentDueDate.setMonth(lastPaymentDueDate.getMonth() + 1);
-        nextPaymentDueDate.setHours(0, 0, 0, 0);
+        nextPaymentDueDate.setMonth(lastPaidDate.getMonth() + 1); // This will be the 1st day of the next month
+        nextPaymentDueDate.setDate(1); // Ensure it's the 1st of the month after last paid/admitted.
+        nextPaymentDueDate.setHours(0, 0, 0, 0); // Normalize time for comparison
+
+
+        // If the student has pending fees (meaning their last paid date is in the past
+        // relative to their monthly cycles), they should always show in 'all_pending'
+        // and potentially in '1_week', '2_weeks', '1_month' if they are also coming due again.
+        const isCurrentlyOverdue = (student.pending_amount && student.pending_amount > 0);
+
+        // For advanced reminders, we consider the next *future* payment due date
+        // relative to 'today'.
+        // If the student is already overdue (isCurrentlyOverdue is true), they are always included.
+        // Otherwise, check if their next payment *will be* due within the selected period.
 
         if (reminderPeriod === 'all_pending') {
-            return true; // Already filtered for pending_amount > 0
-        } else if (reminderPeriod === '1_week') {
-            const oneWeekFromNow = new Date(today);
-            oneWeekFromNow.setDate(today.getDate() + 7);
-            return nextPaymentDueDate <= oneWeekFromNow;
-        } else if (reminderPeriod === '2_weeks') {
-            const twoWeeksFromNow = new Date(today);
-            twoWeeksFromNow.setDate(today.getDate() + 14);
-            return nextPaymentDueDate <= twoWeeksFromNow;
-        } else if (reminderPeriod === '1_month') {
-            const oneMonthFromNow = new Date(today);
-            oneMonthFromNow.setMonth(today.getMonth() + 1);
-            return nextPaymentDueDate <= oneMonthFromNow;
+            return isCurrentlyOverdue; // Only show students who actually have pending amounts.
         }
-        return false;
+
+        const oneWeekFromNow = new Date(today);
+        oneWeekFromNow.setDate(today.getDate() + 7);
+        oneWeekFromNow.setHours(23, 59, 59, 999);
+
+        const twoWeeksFromNow = new Date(today);
+        twoWeeksFromNow.setDate(today.getDate() + 14);
+        twoWeeksFromNow.setHours(23, 59, 59, 999);
+
+        const oneMonthFromNow = new Date(today);
+        oneMonthFromNow.setMonth(today.getMonth() + 1);
+        oneMonthFromNow.setHours(23, 59, 59, 999);
+
+        // Determine if their *next* payment is due within the selected window.
+        // This includes overdue students (who satisfy `nextPaymentDueDate <= today` implicitly in their `pending_amount > 0`).
+        // And for non-overdue students, it checks if `nextPaymentDueDate` falls between `today` and the end of the selected period.
+        const isDueWithinWindow = nextPaymentDueDate >= today && nextPaymentDueDate <= (
+            reminderPeriod === '1_week' ? oneWeekFromNow :
+            reminderPeriod === '2_weeks' ? twoWeeksFromNow :
+            oneMonthFromNow
+        );
+
+        return isCurrentlyOverdue || isDueWithinWindow;
     }) || [];
 
     const sortedReminderStudents = filteredStudents.sort((a, b) => {
         // Sort by how soon their next payment is due (or how long they've been pending)
         const dateA = a.paid_till ? new Date(a.paid_till).getTime() : new Date(a.admission_date).getTime();
         const dateB = b.paid_till ? new Date(b.paid_till).getTime() : new Date(b.admission_date).getTime();
-        return dateA - dateB; // Earlier paid_till comes first
+        return dateA - dateB; // Earlier paid_till comes first (more overdue)
     });
 
+    const handleCheckboxChange = (studentId: number, isChecked: boolean) => {
+        setSelectedStudents(prevSelected =>
+            isChecked ? [...prevSelected, studentId] : prevSelected.filter(id => id !== studentId)
+        );
+    };
+
+    const handleSelectAll = (isChecked: boolean) => {
+        if (isChecked) {
+            setSelectedStudents(sortedReminderStudents.map(student => student.id));
+        } else {
+            setSelectedStudents([]);
+        }
+    };
 
     const handleSendReminder = (student: Student, type: 'whatsapp' | 'sms') => {
         if (!student.phone) {
@@ -823,8 +862,8 @@ const ReminderList: React.FC<ReminderListProps> = ({ allStudents, setError, setS
         }
 
         const messageTemplate = currentLanguage === 'en'
-            ? `Dear ${student.name}, this is a reminder regarding your pending fees of ₹${student.pending_amount} for ${student.pending_months} months. Last paid till: ${student.paid_till ? new Date(student.paid_till).toLocaleDateString() : 'N/A'}. Please clear your dues. Thank you.`
-            : `عزیز ${student.name}، یہ آپ کی زیر التواء فیس ₹${student.pending_amount} کے بارے میں ایک یاد دہانی ہے جو ${student.pending_months} مہینوں کے لیے باقی ہے۔ آخری ادائیگی کی تاریخ: ${student.paid_till ? new Date(student.paid_till).toLocaleDateString('ar-u-nu-arab') : 'دستیاب نہیں'}۔ براہ کرم اپنی واجبات صاف کریں۔ شکریہ۔`;
+            ? `Dear ${student.name}, this is a reminder regarding your pending fees of ₹${student.pending_amount} for ${student.pending_months} months. Last paid till: ${formatDate(student.paid_till)}. Please clear your dues. Thank you.`
+            : `عزیز ${student.name}، یہ آپ کی زیر التواء فیس ₹${student.pending_amount} کے بارے میں ایک یاد دہانی ہے جو ${student.pending_months} مہینوں کے لیے باقی ہے۔ آخری ادائیگی کی تاریخ: ${formatDate(student.paid_till)}۔ براہ کرم اپنی واجبات صاف کریں۔ شکریہ۔`;
 
         const encodedMessage = encodeURIComponent(messageTemplate);
 
@@ -835,6 +874,34 @@ const ReminderList: React.FC<ReminderListProps> = ({ allStudents, setError, setS
             window.open(`sms:${student.phone}?body=${encodedMessage}`, '_blank');
             setSuccessMessage(currentLanguage === 'en' ? `SMS reminder simulated for ${student.name}.` : `${student.name} کے لیے ایس ایم ایس یاد دہانی بھیجی گئی۔`);
         }
+    };
+
+    const handleSendSelectedReminders = (type: 'whatsapp' | 'sms') => {
+        if (selectedStudents.length === 0) {
+            setError(currentLanguage === 'en' ? "No students selected for reminders." : "یاد دہانیوں کے لیے کوئی طالب علم منتخب نہیں کیا گیا۔");
+            return;
+        }
+
+        const studentsToSend = sortedReminderStudents.filter(s => selectedStudents.includes(s.id));
+        let successCount = 0;
+        let failCount = 0;
+
+        studentsToSend.forEach(student => {
+            if (student.phone) {
+                handleSendReminder(student, type); // This will open new tabs/windows
+                successCount++;
+            } else {
+                failCount++;
+            }
+        });
+
+        if (successCount > 0) {
+            setSuccessMessage(currentLanguage === 'en' ? `Simulated sending ${successCount} ${type.toUpperCase()} reminders.` : `${successCount} ${type.toUpperCase()} یاد دہانیوں کو بھیجنے کی نقالی کی گئی۔`);
+        }
+        if (failCount > 0) {
+            setError(currentLanguage === 'en' ? `${failCount} students could not receive reminders due to missing phone numbers.` : `${failCount} طلباء کو فون نمبر نہ ہونے کی وجہ سے یاد دہانیاں نہیں مل سکیں۔`);
+        }
+        setSelectedStudents([]); // Clear selection after sending
     };
 
     return (
@@ -882,43 +949,86 @@ const ReminderList: React.FC<ReminderListProps> = ({ allStudents, setError, setS
                     </p>
                 </div>
             ) : (
-                <ul className="divide-y divide-gray-100">
-                    {sortedReminderStudents.map(student => (
-                        <li key={student.id} className="py-4 px-4 bg-orange-50/50 rounded-lg mb-3 shadow-sm border border-orange-100">
-                            <div className="flex items-center mb-2">
-                                <User className="w-5 h-5 mr-3 text-orange-600" />
-                                <p className="font-semibold text-lg text-gray-800">{student.name} ({currentLanguage === 'en' ? 'Roll No.:' : 'رول نمبر:'} {student.id})</p>
-                            </div>
-                            <div className="text-sm text-gray-700 space-y-1 ml-8">
-                                <p className="flex items-center"><CalendarDays className="w-4 h-4 mr-2 text-gray-500" />
-                                    {currentLanguage === 'en' ? 'Last Paid Till:' : 'آخری ادائیگی:'} {student.paid_till ? new Date(student.paid_till).toLocaleDateString() : 'N/A'}
-                                </p>
-                                <p className="flex items-center text-red-600 font-bold"><DollarSign className="w-4 h-4 mr-2" />
-                                    {currentLanguage === 'en' ? 'Pending:' : 'باقی:'} ₹{student.pending_amount} ({student.pending_months} {currentLanguage === 'en' ? 'months' : 'مہینے'})
-                                </p>
-                                {student.phone && (
-                                    <p className="flex items-center"><Phone className="w-4 h-4 mr-2 text-gray-500" />
-                                        {currentLanguage === 'en' ? 'Phone:' : 'فون:'} {student.phone}
+                <>
+                    <div className="flex items-center mb-4">
+                        <input
+                            type="checkbox"
+                            id="selectAll"
+                            className="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            checked={selectedStudents.length === sortedReminderStudents.length && sortedReminderStudents.length > 0}
+                            onChange={(e) => handleSelectAll(e.target.checked)}
+                        />
+                        <label htmlFor="selectAll" className="text-sm font-medium text-gray-700">
+                            {currentLanguage === 'en' ? 'Select All' : 'تمام منتخب کریں'}
+                        </label>
+                        <span className="ml-auto text-sm text-gray-600">
+                            {currentLanguage === 'en' ? 'Selected:' : 'منتخب کردہ:'} {selectedStudents.length}
+                        </span>
+                    </div>
+
+                    <div className="flex gap-2 mb-6">
+                        <button
+                            onClick={() => handleSendSelectedReminders('whatsapp')}
+                            disabled={selectedStudents.length === 0}
+                            className={`flex-1 flex items-center justify-center font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out text-base
+                                ${selectedStudents.length === 0 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600 text-white transform hover:scale-105 active:scale-95'}`}
+                        >
+                            <MessageSquare className="w-5 h-5 mr-2" /> {currentLanguage === 'en' ? 'WhatsApp Selected' : 'منتخب کردہ واٹس ایپ'}
+                        </button>
+                        <button
+                            onClick={() => handleSendSelectedReminders('sms')}
+                            disabled={selectedStudents.length === 0}
+                            className={`flex-1 flex items-center justify-center font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out text-base
+                                ${selectedStudents.length === 0 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600 text-white transform hover:scale-105 active:scale-95'}`}
+                        >
+                            <MessageSquareText className="w-5 h-5 mr-2" /> {currentLanguage === 'en' ? 'SMS Selected' : 'منتخب کردہ ایس ایم ایس'}
+                        </button>
+                    </div>
+
+                    <ul className="divide-y divide-gray-100">
+                        {sortedReminderStudents.map(student => (
+                            <li key={student.id} className="py-4 px-4 bg-orange-50/50 rounded-lg mb-3 shadow-sm border border-orange-100">
+                                <div className="flex items-center mb-2">
+                                    <input
+                                        type="checkbox"
+                                        className="mr-3 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                        checked={selectedStudents.includes(student.id)}
+                                        onChange={(e) => handleCheckboxChange(student.id, e.target.checked)}
+                                    />
+                                    <User className="w-5 h-5 mr-3 text-orange-600" />
+                                    <p className="font-semibold text-lg text-gray-800">{student.name} (<span className="font-normal text-base">{currentLanguage === 'en' ? 'Roll No.:' : 'رول نمبر:'} {student.id}</span>)</p>
+                                </div>
+                                <div className="text-sm text-gray-700 space-y-1 ml-8">
+                                    <p className="flex items-center"><CalendarDays className="w-4 h-4 mr-2 text-gray-500" />
+                                        {currentLanguage === 'en' ? 'Last Paid Till:' : 'آخری ادائیگی:'} {formatDate(student.paid_till)}
                                     </p>
-                                )}
-                            </div>
-                            <div className="flex gap-4 mt-4">
-                                <button
-                                    onClick={() => handleSendReminder(student, 'whatsapp')}
-                                    className="flex-1 flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out text-base transform hover:scale-105 active:scale-95"
-                                >
-                                    <MessageSquare className="w-5 h-5 mr-2" /> WhatsApp
-                                </button>
-                                <button
-                                    onClick={() => handleSendReminder(student, 'sms')}
-                                    className="flex-1 flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out text-base transform hover:scale-105 active:scale-95"
-                                >
-                                    <MessageSquareText className="w-5 h-5 mr-2" /> SMS
-                                </button>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
+                                    <p className="flex items-center text-red-600 font-bold"><DollarSign className="w-4 h-4 mr-2" />
+                                        {currentLanguage === 'en' ? 'Pending:' : 'باقی:'} ₹{student.pending_amount} ({student.pending_months} {currentLanguage === 'en' ? 'months' : 'مہینے'})
+                                    </p>
+                                    {student.phone && (
+                                        <p className="flex items-center"><Phone className="w-4 h-4 mr-2 text-gray-500" />
+                                            {currentLanguage === 'en' ? 'Phone:' : 'فون:'} <a href={`tel:${student.phone}`} className="text-blue-600 hover:underline">{student.phone}</a>
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="flex gap-4 mt-4">
+                                    <button
+                                        onClick={() => handleSendReminder(student, 'whatsapp')}
+                                        className="flex-1 flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out text-base transform hover:scale-105 active:scale-95"
+                                    >
+                                        <MessageSquare className="w-5 h-5 mr-2" /> WhatsApp
+                                    </button>
+                                    <button
+                                        onClick={() => handleSendReminder(student, 'sms')}
+                                        className="flex-1 flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out text-base transform hover:scale-105 active:scale-95"
+                                    >
+                                        <MessageSquareText className="w-5 h-5 mr-2" /> SMS
+                                    </button>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                </>
             )}
         </div>
     );
@@ -1125,9 +1235,10 @@ interface SettingsPageProps {
     handleChangePassword: (passwords: { old_password: string; new_password: string; }) => Promise<void>;
     setError: (message: string | null) => void;
     setSuccessMessage: (message: string | null) => void;
+    handleLogout: () => void; // Added handleLogout prop
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ setCurrentPage, currentLanguage, toggleLanguage, handleChangePassword, setError, setSuccessMessage }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ setCurrentPage, currentLanguage, toggleLanguage, handleChangePassword, setError, setSuccessMessage, handleLogout }) => {
     return (
         <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full max-w-xl border border-blue-50">
             <h2 className="text-2xl font-bold mb-5 text-gray-800 text-center">
@@ -1160,9 +1271,16 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ setCurrentPage, currentLang
                     </p>
                 </div>
             </div>
+            {/* Logout button moved here as per instructions */}
+            <button
+                onClick={handleLogout} // Call handleLogout here
+                className="mt-6 w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out text-lg tracking-wide transform hover:scale-105 active:scale-95"
+            >
+                {currentLanguage === 'en' ? 'Logout' : 'لاگ آوٹ'}
+            </button>
             <button
                 onClick={() => setCurrentPage('allStudents')}
-                className="mt-6 w-full bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out text-lg tracking-wide transform hover:scale-105 active:scale-95"
+                className="mt-4 w-full bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out text-lg tracking-wide transform hover:scale-105 active:scale-95"
             >
                 {currentLanguage === 'en' ? 'Back to Main' : 'واپس مین پر جائیں'}
             </button>
@@ -1170,6 +1288,113 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ setCurrentPage, currentLang
     );
 };
 
+
+// PendingStudentList.tsx (New component)
+interface PendingStudentListProps {
+    students: Student[] | null;
+    title: string;
+    onSelectStudent: (student: Student, viewMode: 'full' | 'pending-summary') => void;
+    currentLanguage: 'en' | 'ur';
+}
+
+const PendingStudentList: React.FC<PendingStudentListProps> = ({ students, title, onSelectStudent, currentLanguage }) => {
+    const [searchTerm, setSearchTerm] = useState<string>('');
+    const [sortBy, setSortBy] = useState<'amount' | 'longest_pending'>('amount'); // 'amount' for bigger amount, 'longest_pending' for pending from very long
+
+    const filteredStudents = students?.filter(student =>
+        student.name.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || [];
+
+    const sortedStudents = [...filteredStudents].sort((a, b) => {
+        if (sortBy === 'amount') {
+            return (b.pending_amount || 0) - (a.pending_amount || 0); // Descending for amount
+        } else { // 'longest_pending'
+            const dateA = a.paid_till ? new Date(a.paid_till).getTime() : new Date(a.admission_date).getTime();
+            const dateB = b.paid_till ? new Date(b.paid_till).getTime() : new Date(b.admission_date).getTime();
+            return dateA - dateB; // Ascending for date (older dates first)
+        }
+    });
+
+    return (
+        <div className="p-6 rounded-2xl mb-6 mx-auto w-full max-w-xl"> {/* Removed bg-white, shadow, border */}
+            <h2 className="text-2xl font-bold mb-5 text-gray-800 text-center">{title}</h2>
+
+            {/* Search Input */}
+            <div className="relative mb-6 bg-white p-3 rounded-xl shadow-sm border border-blue-50">
+                <input
+                    type="text"
+                    placeholder={currentLanguage === 'en' ? "Search students by name..." : "طالب علم کا نام تلاش کریں..."}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-blue-500 focus:border-blue-500 transition duration-150 shadow-sm"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            </div>
+
+            {/* Sort Options (Segmented Button Style) */}
+            <div className="flex justify-center bg-gray-100 rounded-xl p-1 mb-6 shadow-sm">
+                <button
+                    className={`flex-1 py-2 px-4 rounded-lg font-semibold transition duration-200
+                        ${sortBy === 'amount' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-700 hover:bg-gray-200'}`}
+                    onClick={() => setSortBy('amount')}
+                >
+                    {currentLanguage === 'en' ? 'Bigger Amount' : 'بڑی رقم'}
+                </button>
+                <button
+                    className={`flex-1 py-2 px-4 rounded-lg font-semibold transition duration-200
+                        ${sortBy === 'longest_pending' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-700 hover:bg-gray-200'}`}
+                    onClick={() => setSortBy('longest_pending')}
+                >
+                    {currentLanguage === 'en' ? 'Longest Pending' : 'سب سے زیادہ زیر التواء'}
+                </button>
+            </div>
+
+
+            {!students || students.length === 0 ? (
+                <div className="bg-blue-50 p-6 rounded-xl shadow-inner text-center text-gray-600 mt-8">
+                    <Clock className="w-12 h-12 mx-auto mb-4 text-blue-300" />
+                    <p className="text-lg font-medium">{currentLanguage === 'en' ? 'No students with pending fees found.' : 'زیر التواء فیس والے کوئی طالب علم نہیں ملے۔'}</p>
+                </div>
+            ) : filteredStudents.length === 0 ? (
+                <div className="bg-blue-50 p-6 rounded-xl shadow-inner text-center text-gray-600 mt-8">
+                    <Search className="w-12 h-12 mx-auto mb-4 text-blue-300" />
+                    <p className="text-lg font-medium">{currentLanguage === 'en' ? 'No students match your search criteria.' : 'آپ کے تلاش کے معیار سے کوئی طالب علم نہیں ملا۔'}</p>
+                </div>
+            ) : (
+                <ul className="bg-white rounded-2xl shadow-xl border border-blue-50 divide-y divide-blue-50">
+                    {sortedStudents.map(student => (
+                        <li
+                            key={student.id}
+                            onClick={() => onSelectStudent(student, 'pending-summary')} // Navigate to 'pending-summary' view
+                            className="py-4 px-3 flex items-center justify-between transition duration-200 ease-in-out hover:bg-blue-50 rounded-xl cursor-pointer -mx-3"
+                        >
+                            <div className="flex-1 min-w-0 flex items-center">
+                                <XCircle className="w-6 h-6 mr-3 text-red-500 flex-shrink-0 drop-shadow-sm" /> {/* Changed icon */}
+                                <div className="flex-1 overflow-hidden">
+                                    <p className="text-lg font-semibold text-gray-900 truncate">{student.name}</p>
+                                    <p className="text-sm text-gray-500 flex items-center mt-1">
+                                        <span className="font-normal mr-1">{currentLanguage === 'en' ? 'Roll No.:' : 'رول نمبر:'}</span> <span className="font-normal">{student.id}</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="text-right ml-4">
+                                <p className="text-lg font-bold text-red-500 flex items-center justify-end">
+                                    ₹{student.pending_amount}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {currentLanguage === 'en' ? 'Paid Till:' : 'ادائیگی کی تاریخ تک:'} {formatDate(student.paid_till)}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    ({student.pending_months} {currentLanguage === 'en' ? 'months pending' : 'مہینے زیر التواء'})
+                                </p>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+};
 
 // --- App.tsx (Main Application Logic) ---
 const App = () => {
@@ -1446,35 +1671,41 @@ const App = () => {
 
         if (loading) return null; // LoadingOverlay covers this
 
+        // This variable helps decide the initial open/close state of sections in StudentDetail
+        // and also which buttons/info to show.
+        const studentDetailViewMode: 'full' | 'pending-summary' =
+            (currentPage === 'allStudents' || currentPage === 'addStudent') ? 'full' : 'pending-summary';
+
+
         switch (currentPage) {
             case 'allStudents':
                 return (
                     <StudentList
                         students={students}
                         title={currentLanguage === 'en' ? "All Students" : "تمام طلباء"}
-                        onSelectStudent={(s, mode) => { // Updated to pass mode
+                        onSelectStudent={(s) => { // Removed mode parameter here, it's inferred in renderPage
                             setSelectedStudent(s);
                             setCurrentPage('studentDetail');
                             fetchStudentPayments(s.id);
-                            localStorage.setItem('studentDetailViewMode', mode); // Store mode in local storage
                         }}
+                        currentLanguage={currentLanguage} // Pass language prop
                     />
                 );
             case 'pendingStudents':
                 return (
-                    <StudentList
+                    <PendingStudentList // Using the new PendingStudentList
                         students={pendingStudents}
                         title={currentLanguage === 'en' ? "Students with Pending Fees" : "زیر التواء فیس والے طلباء"}
-                        onSelectStudent={(s, mode) => { // Updated to pass mode
+                        onSelectStudent={(s) => { // Removed mode parameter here, it's inferred in renderPage
                             setSelectedStudent(s);
                             setCurrentPage('studentDetail');
                             fetchStudentPayments(s.id);
-                            localStorage.setItem('studentDetailViewMode', mode); // Store mode in local storage
                         }}
+                        currentLanguage={currentLanguage} // Pass language prop
                     />
                 );
             case 'addStudent':
-                return <AddStudentForm handleAddStudent={handleAddStudent} setError={setError} />;
+                return <AddStudentForm handleAddStudent={handleAddStudent} setError={setError} currentLanguage={currentLanguage} />;
             case 'studentDetail':
                 if (!selectedStudent || studentPayments === null) {
                     return (
@@ -1486,8 +1717,6 @@ const App = () => {
                         </div>
                     );
                 }
-                // Determine viewMode based on localStorage or default to 'full'
-                const studentDetailViewMode = localStorage.getItem('studentDetailViewMode') as 'full' | 'pending-summary' || 'full';
 
                 return (
                     <StudentDetail
@@ -1495,8 +1724,12 @@ const App = () => {
                         payments={studentPayments.payments}
                         onUpdatePayment={handleUpdatePayment}
                         onBackToList={() => {
-                            setCurrentPage('allStudents');
-                            localStorage.removeItem('studentDetailViewMode'); // Clear mode on back
+                            // Go back to the appropriate list page based on the view mode
+                            if (studentDetailViewMode === 'pending-summary') {
+                                setCurrentPage('pendingStudents');
+                            } else {
+                                setCurrentPage('allStudents');
+                            }
                         }}
                         handleDeleteStudent={handleDeleteStudent}
                         setError={setError}
@@ -1506,13 +1739,13 @@ const App = () => {
                             pending_amount: studentPayments.pending_amount,
                             paid_till: studentPayments.payments.length > 0 ? studentPayments.payments[0].paid_till : null
                         }}
-                        viewMode={studentDetailViewMode} // Pass the determined viewMode
+                        viewMode={studentDetailViewMode}
                         currentLanguage={currentLanguage}
                     />
                 );
             case 'dashboard':
-                return <Dashboard students={students} allPayments={allPayments} />;
-            case 'reminders': // New route for reminders
+                return <Dashboard students={students} currentLanguage={currentLanguage} />;
+            case 'reminders':
                 return <ReminderList allStudents={students} setError={setError} setSuccessMessage={setSuccessMessage} currentLanguage={currentLanguage} />;
             case 'settings':
                 return <SettingsPage
@@ -1522,14 +1755,15 @@ const App = () => {
                             handleChangePassword={handleChangePassword}
                             setError={setError}
                             setSuccessMessage={setSuccessMessage}
+                            handleLogout={handleLogout}
                         />;
-            case 'changePassword': // New route for change password
+            case 'changePassword':
                 return <ChangePasswordForm
                             handleChangePassword={handleChangePassword}
                             setError={setError}
                             setSuccessMessage={setSuccessMessage}
                             currentLanguage={currentLanguage}
-                            setCurrentPage={setCurrentPage} // Pass setCurrentPage for navigation back
+                            setCurrentPage={setCurrentPage}
                         />;
             default:
                 return null;
@@ -1548,6 +1782,7 @@ const App = () => {
                     -webkit-font-smoothing: antialiased;
                     -moz-osx-font-smoothing: grayscale;
                     color: #333;
+                    padding-top: 80px; /* Space for fixed header */
                 }
                 .lang-ur { /* Apply this class to elements needing Urdu font */
                     font-family: 'Noto Nastaliq Urdu', serif;
@@ -1578,8 +1813,7 @@ const App = () => {
 
             <LoadingOverlay isLoading={loading} />
 
-            {/* Header and Navigation visibility is controlled by isLoggedIn */}
-            <Header setCurrentPage={setCurrentPage} currentLanguage={currentLanguage} toggleLanguage={toggleLanguage} isLoggedIn={isLoggedIn} handleLogout={handleLogout} />
+            <Header setCurrentPage={setCurrentPage} currentLanguage={currentLanguage} isLoggedIn={isLoggedIn} />
 
             <main className={`max-w-4xl mx-auto px-4 pt-4 ${currentLanguage === 'ur' ? 'lang-ur' : ''}`}>
                 <MessageDisplay message={error} type="error" />
