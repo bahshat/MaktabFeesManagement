@@ -339,11 +339,11 @@ interface StudentDetailProps {
         pending_amount: number;
         paid_till: string | null;
     };
-    allStudents: Student[] | null;
+    // Removed allStudents as it was unused in this component's props.
     viewMode: 'full' | 'pending-summary'; // New prop to control display mode
 }
 
-const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpdatePayment, onBackToList, handleDeleteStudent, setError, setSuccessMessage, pendingDataForStudent, allStudents, viewMode }) => {
+const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpdatePayment, onBackToList, handleDeleteStudent, setError, setSuccessMessage, pendingDataForStudent, viewMode }) => {
     const [newPaidTill, setNewPaidTill] = useState<string>('');
     const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false); // State for confirmation dialog
     const [deletePassword, setDeletePassword] = useState<string>(''); // State for delete password input
@@ -1157,10 +1157,10 @@ const App: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // Authentication state
 
     // Base URL for the Flask API
-    // IMPORTANT: If running on a physical mobile device, replace '192.168.1.6' with your computer's local IP address
+    // IMPORTANT: If running on a physical mobile device, replace '127.0.0.1' with your computer's local IP address
     // (e.g., 'http://192.168.1.5:5000').
     // Also, ensure your Flask backend has Flask-CORS installed and configured to allow requests from your frontend's origin.
-    const API_BASE_URL = 'http://192.168.1.6:5000';
+    const API_BASE_URL = 'http://127.0.0.1:5000';
 
     // Message display component
     interface MessageDisplayProps {
@@ -1233,7 +1233,7 @@ const App: React.FC = () => {
     }, [fetchData, API_BASE_URL]);
 
     const fetchStudentPayments = useCallback((studentId: number) => {
-        fetchData<StudentPaymentDetailsResponse>(`${API_BASE_URL}/students/${studentId}/payments`, "Failed to load payment details.", (fetchedData) => {
+        fetchData<StudentPaymentDetailsResponse>(`${API_BASE_URL}/students/${studentId}/payments`, "Failed to load payment details.", (fetchedData: StudentPaymentDetailsResponse | null) => { // Explicitly type fetchedData
             if (fetchedData) { // Explicitly check if data is not null
                 setSelectedStudent(fetchedData.student);
                 setStudentPayments(fetchedData);
@@ -1446,10 +1446,12 @@ const App: React.FC = () => {
                 return <AddStudentForm handleAddStudent={handleAddStudent} setError={setError} />;
             case 'studentDetail':
                 if (!selectedStudent || studentPayments === null) {
-                    return <div className="bg-white p-6 rounded-2xl shadow-lg text-center text-gray-600 mt-8">
-                                <Clock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                                <p>Loading student details or an error occurred.</p>
-                            </div>;
+                    return (
+                        <div className="bg-white p-6 rounded-2xl shadow-lg text-center text-gray-600 mt-8">
+                            <Clock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                            <p>Loading student details or an error occurred.</p>
+                        </div>
+                    );
                 }
 
                 return (
@@ -1466,7 +1468,7 @@ const App: React.FC = () => {
                             pending_amount: studentPayments.pending_amount,
                             paid_till: studentPayments.payments.length > 0 ? studentPayments.payments[0].paid_till : null
                         }}
-                        allStudents={students}
+                        // allStudents={students} // Removed this prop as it's not used in StudentDetail
                         viewMode={studentDetailViewMode} // Pass the determined view mode
                     />
                 );
@@ -1519,7 +1521,7 @@ const App: React.FC = () => {
 
             <LoadingOverlay isLoading={loading} /> {/* Global Loading Indicator */}
 
-            <Header isLoggedIn={isLoggedIn} setCurrentPage={setCurrentPage} handleLogout={handleLogout} />
+            <Header isLoggedIn={isLoggedIn} setCurrentPage={setCurrentPage} />
 
             <main className="max-w-4xl mx-auto px-4 pt-4">
                 <MessageDisplay message={error} type="error" />
