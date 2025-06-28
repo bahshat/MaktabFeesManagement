@@ -830,7 +830,7 @@ interface SettingsPageProps {
     handleLogout: () => void;
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ API_BASE_URL, setError, setSuccessMessage, setCurrentPage, handleLogout }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ setCurrentPage, handleLogout }) => {
     return (
         <div className="bg-white p-4 rounded-2xl shadow-lg mb-6 mx-auto w-full max-w-xl">
             <h2 className="text-xl font-bold mb-4 text-gray-800 text-center">Settings</h2>
