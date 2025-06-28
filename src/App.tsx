@@ -1,17 +1,17 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Home, Clock, UserPlus, BookOpen, GraduationCap, Search,
     DollarSign, MapPin, Phone, CalendarDays, CheckCircle, XCircle,
-    BarChart2, PieChart, TrendingUp, Settings, ChevronDown, ChevronUp, Globe, LogOut, Lock, BellRing, User, MessageSquare, MessageSquareText, ArrowLeftCircle // Icons for dashboard, settings, expand/collapse, reminders, user, WhatsApp, SMS, Back Arrow
-} from 'lucide-react'; // Ensure 'lucide-react' is installed via npm/yarn
+    BarChart2, PieChart, Settings, ChevronDown, ChevronUp, Globe, Lock, BellRing, User, MessageSquare, MessageSquareText, ArrowLeftCircle
+} from 'lucide-react';
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 // --- Utility Functions ---
 const formatDate = (dateString: string | Date | undefined | null): string => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'N/A'; // Handle invalid date strings
-    const options: Intl.DateTimeFormatOptions = { month: 'short', day: '2-digit', year: 'numeric' }; // Changed to 'numeric' for YYYY
+    if (isNaN(date.getTime())) return 'N/A';
+    const options: Intl.DateTimeFormatOptions = { month: 'short', day: '2-digit', year: 'numeric' };
     return date.toLocaleDateString('en-US', options);
 };
 
@@ -21,18 +21,20 @@ interface Student {
     name: string;
     address: string | null;
     phone: string | null;
-    admission_date: string; //YYYY-MM-DD
-    admission_cancel_date: string | null; //YYYY-MM-DD
+    admission_date: string;
+    admission_cancel_date: string | null;
     monthly_fee: number;
-    paid_till?: string; //YYYY-MM-DD - latest payment
+    paid_till?: string;
     pending_months?: number;
     pending_amount?: number;
+    age: number | null;
+    student_class: string | null;
 }
 
 interface Payment {
     id: number;
     student_id: number;
-    paid_till: string; //YYYY-MM-DD
+    paid_till: string;
 }
 
 interface StudentPaymentDetailsResponse {
@@ -70,15 +72,14 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ isLoading }) => {
 interface HeaderProps {
     setCurrentPage: (page: string) => void;
     currentLanguage: 'en' | 'ur';
-    isLoggedIn: boolean; // Added isLoggedIn prop
-    currentPage: string; // Added to conditionally show back button
+    isLoggedIn: boolean;
+    currentPage: string;
 }
 
 const Header: React.FC<HeaderProps> = ({ setCurrentPage, currentLanguage, isLoggedIn, currentPage }) => {
     const title = currentLanguage === 'en' ? 'Maktab Fees Portal' : 'مکتب فیس پورٹل';
     const organizationName = currentLanguage === 'en' ? 'Anjuman Abu Hurairah' : 'انجمن ابو ہریرہ';
 
-    // Pages where a back button should be shown
     const showBackButton = isLoggedIn && (
         currentPage === 'studentDetail' ||
         currentPage === 'addStudent' ||
@@ -114,13 +115,13 @@ const Header: React.FC<HeaderProps> = ({ setCurrentPage, currentLanguage, isLogg
                         <ArrowLeftCircle className="w-5 h-5 text-white" />
                     </button>
                 ) : (
-                    <div className="w-8"></div> // Placeholder to keep title centered when no back button
+                    <div className="w-8"></div>
                 )}
                 <h1 className="text-xl font-extrabold text-center tracking-wide leading-tight flex-grow drop-shadow-lg mx-2">
                     {title}
                 </h1>
                 <div className="flex space-x-2 flex-shrink-0">
-                    {isLoggedIn && ( // Only show settings if logged in
+                    {isLoggedIn && (
                         <button
                             onClick={() => setCurrentPage('settings')}
                             className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition duration-200 shadow-md"
@@ -144,11 +145,11 @@ interface NavigationProps {
     fetchPendingStudents: () => void;
     fetchAllStudents: () => void;
     currentLanguage: 'en' | 'ur';
-    isLoggedIn: boolean; // Added isLoggedIn prop
+    isLoggedIn: boolean;
 }
 
 const Navigation: React.FC<NavigationProps> = ({ currentPage, setCurrentPage, fetchPendingStudents, fetchAllStudents, currentLanguage, isLoggedIn }) => {
-    if (!isLoggedIn) return null; // Hide navigation if not logged in
+    if (!isLoggedIn) return null;
 
     const navItems = [
         { name: currentLanguage === 'en' ? 'All Students' : 'تمام طلباء', icon: Home, page: 'allStudents', action: fetchAllStudents },
@@ -194,19 +195,20 @@ const StudentList: React.FC<StudentListProps> = ({ students, title, onSelectStud
     ) || [];
 
     return (
-        <div className="mb-6 mx-auto w-full"> {/* Removed px-4 and max-w-xl */}
+        <div className="mb-6 mx-auto w-full">
             <h2 className="text-2xl font-bold mb-5 text-gray-800 text-center">{title}</h2>
 
-            {/* Search Input - now its own card */}
-            <div className="relative mb-4 bg-white p-6 rounded-2xl shadow-xl border border-blue-50">
-                <input
-                    type="text"
-                    placeholder={currentLanguage === 'en' ? "Search students by name..." : "طالب علم کا نام تلاش کریں..."}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-blue-500 focus:border-blue-500 transition duration-150 shadow-sm"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <div className="bg-white p-6 rounded-2xl shadow-xl border border-blue-50 mb-0">
+                <div className="relative">
+                    <input
+                        type="text"
+                        placeholder={currentLanguage === 'en' ? "Search students by name..." : "طالب علم کا نام تلاش کریں..."}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-blue-500 focus:border-blue-500 transition duration-150 shadow-sm"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                </div>
             </div>
 
             {!students || students.length === 0 ? (
@@ -220,13 +222,13 @@ const StudentList: React.FC<StudentListProps> = ({ students, title, onSelectStud
                     <p className="text-lg font-medium">{currentLanguage === 'en' ? 'No students match your search criteria.' : 'آپ کے تلاش کے معیار سے کوئی طالب علم نہیں ملا۔'}</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-2xl shadow-xl border border-blue-50 overflow-hidden"> {/* Removed max-h and overflow-y-auto */}
+                <div className="bg-white rounded-2xl shadow-xl border border-blue-50 mt-0 pt-0">
                     <ul className="divide-y divide-blue-50">
                         {filteredStudents.map(student => (
                             <li
                                 key={student.id}
-                                onClick={() => onSelectStudent(student, 'full')} // Default to 'full' view for All Students
-                                className="py-4 px-3 flex items-center justify-between transition duration-200 ease-in-out hover:bg-blue-50 rounded-xl cursor-pointer -mx-3"
+                                onClick={() => onSelectStudent(student, 'full')}
+                                className="py-4 px-3 flex items-center justify-between transition duration-200 ease-in-out hover:bg-blue-50 rounded-xl cursor-pointer"
                             >
                                 <div className="flex items-center flex-1 min-w-0">
                                     <GraduationCap className="w-6 h-6 mr-3 text-blue-600 flex-shrink-0 drop-shadow-sm" />
@@ -249,42 +251,38 @@ const StudentList: React.FC<StudentListProps> = ({ students, title, onSelectStud
 };
 
 // AddStudentForm.tsx
+interface AddStudentFormData {
+    name: string;
+    address: string | null;
+    phone: string | null;
+    admission_date: string;
+    initial_paid_till: string;
+    monthly_fee: number;
+    age: number | null;
+    student_class: string | null;
+}
+
 interface AddStudentFormProps {
-    studentData: {
-        name: string;
-        address: string | null;
-        phone: string | null;
-        admission_date: string;
-        initial_paid_till: string;
-        monthly_fee: number;
-    };
-    setStudentData: React.Dispatch<React.SetStateAction<{
-        name: string;
-        address: string | null;
-        phone: string | null;
-        admission_date: string;
-        initial_paid_till: string;
-        monthly_fee: number;
-    }>>;
+    studentData: AddStudentFormData;
+    setStudentData: React.Dispatch<React.SetStateAction<AddStudentFormData>>;
     setError: (message: string | null) => void;
     currentLanguage: 'en' | 'ur';
 }
 
-const AddStudentForm: React.FC<AddStudentFormProps> = ({ studentData, setStudentData, setError, currentLanguage }) => {
+const AddStudentForm: React.FC<AddStudentFormProps> = ({ studentData, setStudentData, currentLanguage }) => {
     const today = new Date().toISOString().split('T')[0];
 
     useEffect(() => {
-        // Initialize if not already set (e.g., on first render or page refresh)
         if (!studentData.admission_date) {
             setStudentData(prev => ({ ...prev, admission_date: today }));
         }
-        if (studentData.monthly_fee === undefined || studentData.monthly_fee === null || isNaN(studentData.monthly_fee)) { // Check for undefined, null, or NaN
-            setStudentData(prev => ({ ...prev, monthly_fee: 400 })); // Default monthly fee to 400
+        if (studentData.monthly_fee === undefined || studentData.monthly_fee === null || isNaN(studentData.monthly_fee)) {
+            setStudentData(prev => ({ ...prev, monthly_fee: 400 }));
         }
     }, [studentData.admission_date, studentData.monthly_fee, setStudentData, today]);
 
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
         setStudentData(prev => ({ ...prev, [id]: value }));
     };
@@ -293,9 +291,13 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ studentData, setStudent
         setStudentData(prev => ({ ...prev, monthly_fee: parseFloat(e.target.value) || 0 }));
     };
 
+    const handleAgeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setStudentData(prev => ({ ...prev, age: parseInt(e.target.value) || null }));
+    };
+
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}> {/* Removed px-4 and max-w-xl */}
+        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full">
             <h2 className="text-2xl font-bold mb-5 text-gray-800 text-center">{currentLanguage === 'en' ? 'Add New Student' : 'نیا طالب علم شامل کریں'}</h2>
             <form className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center">
@@ -312,13 +314,39 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ studentData, setStudent
                         required
                     />
                 </div>
-                <div className="flex flex-col sm:flex-row sm:items-start"> {/* Use items-start for textarea */}
+                <div className="flex flex-col sm:flex-row sm:items-center">
+                    <label htmlFor="age" className="block text-sm font-medium text-gray-700 sm:w-1/3 sm:min-w-[120px] mb-1 sm:mb-0">
+                        {currentLanguage === 'en' ? 'Age' : 'عمر'}
+                    </label>
+                    <input
+                        type="number"
+                        id="age"
+                        className="flex-1 mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+                        value={studentData.age || ''}
+                        onChange={handleAgeChange}
+                        placeholder={currentLanguage === 'en' ? "e.g., 10" : "مثلاً، 10"}
+                    />
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center">
+                    <label htmlFor="student_class" className="block text-sm font-medium text-gray-700 sm:w-1/3 sm:min-w-[120px] mb-1 sm:mb-0">
+                        {currentLanguage === 'en' ? 'Class' : 'کلاس'}
+                    </label>
+                    <input
+                        type="text"
+                        id="student_class"
+                        className="flex-1 mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+                        value={studentData.student_class || ''}
+                        onChange={handleChange}
+                        placeholder={currentLanguage === 'en' ? "e.g., Grade 5" : "مثلاً، گریڈ 5"}
+                    />
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-start">
                     <label htmlFor="address" className="block text-sm font-medium text-gray-700 sm:w-1/3 sm:min-w-[120px] mb-1 sm:mb-0 pt-2">
                         {currentLanguage === 'en' ? 'Address (Optional)' : 'پتہ (اختیاری)'}
                     </label>
                     <textarea
                         id="address"
-                        rows={3} // 3 line height
+                        rows={3}
                         className="flex-1 mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out resize-y"
                         value={studentData.address || ''}
                         onChange={handleChange}
@@ -425,20 +453,20 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpda
 
     const calculateNewPaidTill = (months: number) => {
         const baseDate = pendingDataForStudent.paid_till ? new Date(pendingDataForStudent.paid_till) : new Date(student.admission_date);
-        
+
         let newDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
 
         const today = new Date();
         today.setHours(0,0,0,0);
-        
+
         if (baseDate <= today) {
             newDate.setMonth(newDate.getMonth() + 1);
         }
-        
-        newDate.setMonth(newDate.getMonth() + (months -1)); 
+
+        newDate.setMonth(newDate.getMonth() + (months -1));
 
         newDate.setDate(new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0).getDate());
-        
+
         setNewPaidTill(newDate.toISOString().split('T')[0]);
     };
 
@@ -488,7 +516,7 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpda
     const isFeesCleared = pendingDataForStudent.pending_amount === 0 || pendingDataForStudent.pending_amount === undefined;
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full border border-blue-50"> {/* Removed max-w-xl */}
+        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full border border-blue-50">
             <h2 className="text-2xl font-bold mb-2 text-gray-800 text-center">
                 {student.name}
             </h2>
@@ -504,7 +532,9 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpda
                 </button>
                 {isBiodataOpen && (
                     <div className="p-4 space-y-2 text-gray-700 text-base border-t border-gray-200">
-                        <p className="flex items-center"><User className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Roll No.:' : 'رول نمبر:'}</span> {student.id}</p> {/* Moved Roll No. here */}
+                        <p className="flex items-center"><User className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Roll No.:' : 'رول نمبر:'}</span> {student.id}</p>
+                        <p className="flex items-center"><CalendarDays className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Age:' : 'عمر:'}</span> {student.age || 'N/A'}</p>
+                        <p className="flex items-center"><BookOpen className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Class:' : 'کلاس:'}</span> {student.student_class || 'N/A'}</p>
                         <p className="flex items-center"><MapPin className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Address:' : 'پتہ:'}</span> {student.address || 'N/A'}</p>
                         <p className="flex items-center"><Phone className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Phone:' : 'فون:'}</span> <a href={`tel:${student.phone}`} className="text-blue-600 hover:underline">{student.phone || 'N/A'}</a></p>
                         <p className="flex items-center"><CalendarDays className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Admission Date:' : 'داخلہ کی تاریخ:'}</span> {formatDate(student.admission_date)}</p>
@@ -722,7 +752,7 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ students, currentLanguage }) => {
     if (!students || students.length === 0) {
         return (
-            <div className="mb-6 mx-auto w-full"> {/* Removed px-4 and max-w-xl */}
+            <div className="mb-6 mx-auto w-full">
                 <div className="bg-blue-50 p-6 rounded-xl shadow-inner text-center text-gray-600">
                     <BarChart2 className="w-12 h-12 mx-auto mb-4 text-blue-300" />
                     <p className="text-lg font-medium">{currentLanguage === 'en' ? 'No student data available for dashboard.' : 'ڈیش بورڈ کے لیے کوئی طالب علم ڈیٹا دستیاب نہیں ہے۔'}</p>
@@ -741,12 +771,11 @@ const Dashboard: React.FC<DashboardProps> = ({ students, currentLanguage }) => {
         { name: currentLanguage === 'en' ? 'Cleared' : 'صاف شدہ', value: clearedStudentsCount },
         { name: currentLanguage === 'en' ? 'Pending' : 'زیر التواء', value: pendingStudentsCount },
     ];
-    // Modern and interesting color palette
     const PIE_COLORS = ['#4CAF50', '#FFC107', '#2196F3', '#9C27B0'];
 
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full border border-blue-50 flex flex-col items-center"> {/* Removed px-4 and max-w-2xl */}
+        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full border border-blue-50 flex flex-col items-center">
             <h2 className="text-2xl font-bold mb-6 text-gray-800 text-center">{currentLanguage === 'en' ? 'Data Dashboard' : 'ڈیٹا ڈیش بورڈ'}</h2>
 
             {/* Key Metrics */}
@@ -787,9 +816,11 @@ const Dashboard: React.FC<DashboardProps> = ({ students, currentLanguage }) => {
                                 fill="#8884d8"
                                 dataKey="value"
                             >
-                                {pieData.map((entry, index) => (
+                                {pieData.map((entry, index) => { 
+                                    console.log(`Rendering pie slice for ${entry.name} with value ${entry.value}`);
+                                return(
                                     <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                                ))}
+                                )})}
                             </Pie>
                             <Tooltip formatter={(value, name) => [`${value} ${currentLanguage === 'en' ? 'students' : 'طلباء'}`, name]} />
                             <Legend layout="horizontal" align="center" verticalAlign="bottom" />
@@ -806,44 +837,34 @@ interface ReminderListProps {
     allStudents: Student[] | null;
     setError: (message: string | null) => void;
     setSuccessMessage: (message: string | null) => void;
-    currentLanguage: 'en' | 'ur'; // Added language prop
+    currentLanguage: 'en' | 'ur';
 }
 
 const ReminderList: React.FC<ReminderListProps> = ({ allStudents, setError, setSuccessMessage, currentLanguage }) => {
-    const [reminderPeriod, setReminderPeriod] = useState<string>('all_pending'); // '1_week', '2_weeks', '1_month', 'all_pending'
-    const [searchTerm, setSearchTerm] = useState<string>(''); // For search filter
-    const [selectedStudents, setSelectedStudents] = useState<number[]>([]); // To store IDs of selected students
+    const [reminderPeriod, setReminderPeriod] = useState<string>('all_pending');
+    const [searchTerm, setSearchTerm] = useState<string>('');
+    const [selectedStudents, setSelectedStudents] = useState<number[]>([]);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const filteredStudents = allStudents?.filter(student => {
-        // Filter by search term first
         const matchesSearch = searchTerm ? student.name.toLowerCase().includes(searchTerm.toLowerCase()) : true;
         if (!matchesSearch) return false;
 
-        // Determine the actual next due date based on paid_till or admission_date
         const lastPaidDate = student.paid_till ? new Date(student.paid_till) : new Date(student.admission_date);
         lastPaidDate.setHours(0, 0, 0, 0);
 
         let nextPaymentDueDate = new Date(lastPaidDate);
-        nextPaymentDueDate.setMonth(lastPaidDate.getMonth() + 1); // This will be the 1st day of the next month
-        nextPaymentDueDate.setDate(1); // Ensure it's the 1st of the month after last paid/admitted.
-        nextPaymentDueDate.setHours(0, 0, 0, 0); // Normalize time for comparison
+        nextPaymentDueDate.setMonth(lastPaidDate.getMonth() + 1);
+        nextPaymentDueDate.setDate(1);
+        nextPaymentDueDate.setHours(0, 0, 0, 0);
 
 
-        // If the student has pending fees (meaning their last paid date is in the past
-        // relative to their monthly cycles), they should always show in 'all_pending'
-        // and potentially in '1_week', '2_weeks', '1_month' if they are also coming due again.
         const isCurrentlyOverdue = (student.pending_amount && student.pending_amount > 0);
 
-        // For advanced reminders, we consider the next *future* payment due date
-        // relative to 'today'.
-        // If the student is already overdue (isCurrentlyOverdue is true), they are always included.
-        // Otherwise, check if their next payment *will be* due within the selected period.
-
         if (reminderPeriod === 'all_pending') {
-            return isCurrentlyOverdue; // Only show students who actually have pending amounts.
+            return isCurrentlyOverdue;
         }
 
         const oneWeekFromNow = new Date(today);
@@ -858,9 +879,6 @@ const ReminderList: React.FC<ReminderListProps> = ({ allStudents, setError, setS
         oneMonthFromNow.setMonth(today.getMonth() + 1);
         oneMonthFromNow.setHours(23, 59, 59, 999);
 
-        // Determine if their *next* payment is due within the selected window.
-        // This includes overdue students (who satisfy `nextPaymentDueDate <= today` implicitly in their `pending_amount > 0`).
-        // And for non-overdue students, it checks if `nextPaymentDueDate` falls between `today` and the end of the selected period.
         const isDueWithinWindow = nextPaymentDueDate >= today && nextPaymentDueDate <= (
             reminderPeriod === '1_week' ? oneWeekFromNow :
             reminderPeriod === '2_weeks' ? twoWeeksFromNow :
@@ -871,10 +889,9 @@ const ReminderList: React.FC<ReminderListProps> = ({ allStudents, setError, setS
     }) || [];
 
     const sortedReminderStudents = filteredStudents.sort((a, b) => {
-        // Sort by how soon their next payment is due (or how long they've been pending)
         const dateA = a.paid_till ? new Date(a.paid_till).getTime() : new Date(a.admission_date).getTime();
         const dateB = b.paid_till ? new Date(b.paid_till).getTime() : new Date(b.admission_date).getTime();
-        return dateA - dateB; // Earlier paid_till comes first (more overdue)
+        return dateA - dateB;
     });
 
     const handleCheckboxChange = (studentId: number, isChecked: boolean) => {
@@ -925,7 +942,7 @@ const ReminderList: React.FC<ReminderListProps> = ({ allStudents, setError, setS
 
         studentsToSend.forEach(student => {
             if (student.phone) {
-                handleSendReminder(student, type); // This will open new tabs/windows
+                handleSendReminder(student, type);
                 successCount++;
             } else {
                 failCount++;
@@ -938,11 +955,11 @@ const ReminderList: React.FC<ReminderListProps> = ({ allStudents, setError, setS
         if (failCount > 0) {
             setError(currentLanguage === 'en' ? `${failCount} students could not receive reminders due to missing phone numbers.` : `${failCount} طلباء کو فون نمبر نہ ہونے کی وجہ سے یاد دہانیاں نہیں مل سکیں۔`);
         }
-        setSelectedStudents([]); // Clear selection after sending
+        setSelectedStudents([]);
     };
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full border border-blue-50"> {/* Removed max-w-xl */}
+        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full border border-blue-50">
             <h2 className="text-2xl font-bold mb-5 text-gray-800 text-center flex items-center justify-center">
                 <BellRing className="w-7 h-7 mr-3 text-orange-500" />
                 {currentLanguage === 'en' ? 'Reminders' : 'یاد دہانیاں'}
@@ -1098,7 +1115,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ handleLogin, setError, currentLangu
     };
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full border border-blue-50"> {/* Removed max-w-md and px-4 */}
+        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full border border-blue-50">
             <h2 className="text-2xl font-bold mb-6 text-gray-800 text-center">
                 {currentLanguage === 'en' ? 'Admin Login' : 'ایڈمن لاگ ان'}
             </h2>
@@ -1154,10 +1171,10 @@ interface ChangePasswordFormProps {
     setError: (message: string | null) => void;
     setSuccessMessage: (message: string | null) => void;
     currentLanguage: 'en' | 'ur';
-    setCurrentPage: (page: string) => void; // Added for navigation
+    setCurrentPage: (page: string) => void;
 }
 
-const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ handleChangePassword, setError, setSuccessMessage, currentLanguage, setCurrentPage }) => {
+const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ handleChangePassword, setError, currentLanguage, setCurrentPage }) => {
     const [oldPassword, setOldPassword] = useState<string>('');
     const [newPassword, setNewPassword] = useState<string>('');
     const [confirmNewPassword, setConfirmNewPassword] = useState<string>('');
@@ -1189,7 +1206,7 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ handleChangePas
     };
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full border border-blue-50"> {/* Removed max-w-xl and px-4 */}
+        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full border border-blue-50">
             <h2 className="text-2xl font-bold mb-5 text-gray-800 text-center">
                 {currentLanguage === 'en' ? 'Change Admin Password' : 'ایڈمن پاس ورڈ تبدیل کریں'}
             </h2>
@@ -1263,7 +1280,7 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ handleChangePas
 };
 
 
-// SettingsPage.tsx - Updated to include Change Password option
+// SettingsPage.tsx
 interface SettingsPageProps {
     setCurrentPage: (page: string) => void;
     currentLanguage: 'en' | 'ur';
@@ -1271,12 +1288,12 @@ interface SettingsPageProps {
     handleChangePassword: (passwords: { old_password: string; new_password: string; }) => Promise<void>;
     setError: (message: string | null) => void;
     setSuccessMessage: (message: string | null) => void;
-    handleLogout: () => void; // Added handleLogout prop
+    handleLogout: () => void;
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ setCurrentPage, currentLanguage, toggleLanguage, handleChangePassword, setError, setSuccessMessage, handleLogout }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ setCurrentPage, currentLanguage, toggleLanguage, handleLogout }) => {
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full border border-blue-50"> {/* Removed max-w-xl and px-4 */}
+        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full border border-blue-50">
             <h2 className="text-2xl font-bold mb-5 text-gray-800 text-center">
                 {currentLanguage === 'en' ? 'Settings' : 'ترتیبات'}
             </h2>
@@ -1297,7 +1314,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ setCurrentPage, currentLang
                     {currentLanguage === 'en' ? 'Change Admin Password' : 'ایڈمن پاس ورڈ تبدیل کریں'}
                 </button>
 
-                {/* Placeholder for other future settings */}
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 text-gray-700">
                     <p className="font-semibold mb-2">
                         {currentLanguage === 'en' ? 'Other Settings (Future Feature)' : 'دیگر ترتیبات (مستقبل کی خصوصیت)'}
@@ -1307,9 +1323,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ setCurrentPage, currentLang
                     </p>
                 </div>
             </div>
-            {/* Logout button moved here as per instructions */}
             <button
-                onClick={handleLogout} // Call handleLogout here
+                onClick={handleLogout}
                 className="mt-6 w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out text-lg tracking-wide transform hover:scale-105 active:scale-95"
             >
                 {currentLanguage === 'en' ? 'Logout' : 'لاگ آوٹ'}
@@ -1325,7 +1340,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ setCurrentPage, currentLang
 };
 
 
-// PendingStudentList.tsx (New component)
+// PendingStudentList.tsx
 interface PendingStudentListProps {
     students: Student[] | null;
     title: string;
@@ -1335,7 +1350,7 @@ interface PendingStudentListProps {
 
 const PendingStudentList: React.FC<PendingStudentListProps> = ({ students, title, onSelectStudent, currentLanguage }) => {
     const [searchTerm, setSearchTerm] = useState<string>('');
-    const [sortBy, setSortBy] = useState<'amount' | 'longest_pending'>('amount'); // 'amount' for bigger amount, 'longest_pending' for pending from very long
+    const [sortBy, setSortBy] = useState<'amount' | 'longest_pending'>('amount');
 
     const filteredStudents = students?.filter(student =>
         student.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -1343,32 +1358,32 @@ const PendingStudentList: React.FC<PendingStudentListProps> = ({ students, title
 
     const sortedStudents = [...filteredStudents].sort((a, b) => {
         if (sortBy === 'amount') {
-            return (b.pending_amount || 0) - (a.pending_amount || 0); // Descending for amount
-        } else { // 'longest_pending'
+            return (b.pending_amount || 0) - (a.pending_amount || 0);
+        } else {
             const dateA = a.paid_till ? new Date(a.paid_till).getTime() : new Date(a.admission_date).getTime();
             const dateB = b.paid_till ? new Date(b.paid_till).getTime() : new Date(b.admission_date).getTime();
-            return dateA - dateB; // Ascending for date (older dates first)
+            return dateA - dateB;
         }
     });
 
     return (
-        <div className="mb-6 mx-auto w-full"> {/* Removed px-4 and max-w-xl */}
+        <div className="mb-6 mx-auto w-full">
             <h2 className="text-2xl font-bold mb-5 text-gray-800 text-center">{title}</h2>
 
-            {/* Search Input - now its own card */}
-            <div className="relative mb-4 bg-white p-6 rounded-2xl shadow-xl border border-blue-50">
-                <input
-                    type="text"
-                    placeholder={currentLanguage === 'en' ? "Search students by name..." : "طالب علم کا نام تلاش کریں..."}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-blue-500 focus:border-blue-500 transition duration-150 shadow-sm"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <div className="bg-white p-6 rounded-2xl shadow-xl border border-blue-50 mb-0">
+                <div className="relative">
+                    <input
+                        type="text"
+                        placeholder={currentLanguage === 'en' ? "Search students by name..." : "طالب علم کا نام تلاش کریں..."}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-blue-500 focus:border-blue-500 transition duration-150 shadow-sm"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                </div>
             </div>
 
-            {/* Sort Options (Segmented Button Style) */}
-            <div className="flex justify-center bg-gray-100 rounded-xl p-1 mb-6 shadow-sm">
+            <div className="flex justify-center bg-gray-100 rounded-xl p-1 mt-4 mb-0 shadow-sm">
                 <button
                     className={`flex-1 py-2 px-4 rounded-lg font-semibold transition duration-200
                         ${sortBy === 'amount' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-700 hover:bg-gray-200'}`}
@@ -1397,13 +1412,13 @@ const PendingStudentList: React.FC<PendingStudentListProps> = ({ students, title
                     <p className="text-lg font-medium">{currentLanguage === 'en' ? 'No students match your search criteria.' : 'آپ کے تلاش کے معیار سے کوئی طالب علم نہیں ملا۔'}</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-2xl shadow-xl border border-blue-50 overflow-hidden"> {/* Removed max-h and overflow-y-auto */}
+                <div className="bg-white rounded-2xl shadow-xl border border-blue-50 mt-0 pt-0">
                     <ul className="divide-y divide-blue-50">
                         {sortedStudents.map(student => (
                             <li
                                 key={student.id}
-                                onClick={() => onSelectStudent(student, 'pending-summary')} // Navigate to 'pending-summary' view
-                                className="py-4 px-3 flex items-center justify-between transition duration-200 ease-in-out hover:bg-blue-50 rounded-xl cursor-pointer -mx-3"
+                                onClick={() => onSelectStudent(student, 'pending-summary')}
+                                className="py-4 px-3 flex items-center justify-between transition duration-200 ease-in-out hover:bg-blue-50 rounded-xl cursor-pointer"
                             >
                                 <div className="flex-1 min-w-0 flex items-center">
                                     <XCircle className="w-6 h-6 mr-3 text-red-500 flex-shrink-0 drop-shadow-sm" />
@@ -1436,43 +1451,30 @@ const PendingStudentList: React.FC<PendingStudentListProps> = ({ students, title
 
 // --- App.tsx (Main Application Logic) ---
 const App = () => {
-    // State to manage the current view/page in the single-page application
-    const [currentPage, setCurrentPage] = useState('login'); // Default to login page
-    // State to store the list of all students
+    const [currentPage, setCurrentPage] = useState('login');
     const [students, setStudents] = useState<Student[] | null>(null);
-    // State to store the list of students with pending fees
     const [pendingStudents, setPendingStudents] = useState<Student[] | null>(null);
-    // State to store details of a single student when viewing their payments
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-    // State to store payment records for the selected student
     const [studentPayments, setStudentPayments] = useState<StudentPaymentDetailsResponse | null>(null);
-    // State to store all payment records (for dashboard analytics)
-    const [allPayments, setAllPayments] = useState<Payment[] | null>(null);
-    // State for loading indicators
     const [loading, setLoading] = useState(false);
-    // State for error messages
     const [error, setError] = useState<string | null>(null);
-    // State for success messages
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    // State for language
     const [currentLanguage, setCurrentLanguage] = useState<'en' | 'ur'>('en');
-    // State for login status
-    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // Start as false, require login
+    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
-    // State for AddStudentForm data (lifted up for external button)
-    const [addStudentFormData, setAddStudentFormData] = useState({
+    const [addStudentFormData, setAddStudentFormData] = useState<AddStudentFormData>({
         name: '',
         address: null,
         phone: null,
         admission_date: '',
         initial_paid_till: '',
-        monthly_fee: 400, // Default monthly fee
+        monthly_fee: 400,
+        age: null,
+        student_class: null,
     });
 
-    // Base URL for the Flask API - Use your actual PythonAnywhere URL here
-    const API_BASE_URL = 'https://bahshat.pythonanywhere.com'; // User's provided URL
+    const API_BASE_URL = 'https://bahshat.pythonanywhere.com';
 
-    // Toggle language function
     const toggleLanguage = () => {
         setCurrentLanguage(prevLang => prevLang === 'en' ? 'ur' : 'en');
     };
@@ -1505,7 +1507,6 @@ const App = () => {
         );
     };
 
-    // Data fetching functions (using useCallback for memoization)
     const fetchData = useCallback(async <T,>(
         url: string,
         errorMessage: string
@@ -1521,7 +1522,6 @@ const App = () => {
                 try {
                     parsedError = JSON.parse(errorText);
                 } catch (e) {
-                    // Not a JSON error, keep errorText
                 }
                 throw new Error(parsedError?.error || `HTTP error! Status: ${response.status}. Response: ${errorText || 'No response body.'}`);
             }
@@ -1537,26 +1537,25 @@ const App = () => {
     }, [API_BASE_URL]);
 
     const fetchAllStudents = useCallback(async () => {
-        if (!isLoggedIn) return; // Only fetch if logged in
+        if (!isLoggedIn) return;
         const data = await fetchData<Student[]>(`${API_BASE_URL}/students`, "Failed to load students.");
         setStudents(data);
     }, [fetchData, API_BASE_URL, isLoggedIn]);
 
     const fetchPendingStudents = useCallback(async () => {
-        if (!isLoggedIn) return; // Only fetch if logged in
+        if (!isLoggedIn) return;
         const data = await fetchData<Student[]>(`${API_BASE_URL}/students/pending`, "Failed to load pending students.");
         setPendingStudents(data);
     }, [fetchData, API_BASE_URL, isLoggedIn]);
 
     const fetchAllPayments = useCallback(async () => {
-        if (!isLoggedIn) return; // Only fetch if logged in
-        const data = await fetchData<Payment[]>(`${API_BASE_URL}/payments`, "Failed to load all payments.");
-        setAllPayments(data);
+        if (!isLoggedIn) return;
+        await fetchData<Payment[]>(`${API_BASE_URL}/payments`, "Failed to load all payments.");
     }, [fetchData, API_BASE_URL, isLoggedIn]);
 
 
     const fetchStudentPayments = useCallback(async (studentId: number) => {
-        if (!isLoggedIn) return; // Only fetch if logged in
+        if (!isLoggedIn) return;
         const fetchedData = await fetchData<StudentPaymentDetailsResponse>(`${API_BASE_URL}/students/${studentId}/payments`, "Failed to load payment details.");
         if (fetchedData) {
             setSelectedStudent(fetchedData.student);
@@ -1568,7 +1567,6 @@ const App = () => {
     }, [fetchData, API_BASE_URL, isLoggedIn]);
 
 
-    // Mutation functions
     const handleMutation = useCallback(async (url: string, method: string, body: any, successMsg: string, errorMsg: string) => {
         setLoading(true);
         setError(null);
@@ -1586,7 +1584,6 @@ const App = () => {
                 try {
                     parsedError = JSON.parse(errorText);
                 } catch (e) {
-                    // Not a JSON error, keep errorText
                 }
                 throw new Error(parsedError?.error || `HTTP error! Status: ${response.status}. Response: ${errorText || 'No response body.'}`);
             }
@@ -1612,8 +1609,7 @@ const App = () => {
                 currentLanguage === 'en' ? "Login failed. Invalid credentials." : "لاگ ان ناکام. غلط معلومات."
             );
             setIsLoggedIn(true);
-            setCurrentPage('allStudents'); // Navigate to home page after successful login
-            // Fetch initial data after successful login
+            setCurrentPage('allStudents');
             fetchAllStudents();
             fetchPendingStudents();
             fetchAllPayments();
@@ -1622,12 +1618,11 @@ const App = () => {
 
     const handleLogout = () => {
         setIsLoggedIn(false);
-        setCurrentPage('login'); // Redirect to login page on logout
+        setCurrentPage('login');
         setStudents(null);
         setPendingStudents(null);
         setSelectedStudent(null);
         setStudentPayments(null);
-        setAllPayments(null);
         setSuccessMessage(currentLanguage === 'en' ? "Logged out successfully." : "کامیابی سے لاگ آوٹ ہو گیا۔");
     };
 
@@ -1640,19 +1635,18 @@ const App = () => {
                 currentLanguage === 'en' ? "Password changed successfully!" : "پاس ورڈ کامیابی سے تبدیل ہو گیا ہے۔",
                 currentLanguage === 'en' ? "Failed to change password. Please check old password." : "پاس ورڈ تبدیل کرنے میں ناکام۔ براہ کرم پرانا پاس ورڈ چیک کریں۔"
             );
-            setCurrentPage('settings'); // Stay on settings or go back to main if preferred
+            setCurrentPage('settings');
         } catch (e) { /* Error handled by handleMutation */ }
     };
 
 
     const handleAddStudent = async () => {
-        // Validation moved here from AddStudentForm
         if (!addStudentFormData.name || !addStudentFormData.admission_date || !addStudentFormData.initial_paid_till || addStudentFormData.monthly_fee === 0) {
             setError(currentLanguage === 'en' ? "Please fill in Name, Admission Date, Initial Paid Till date, and Monthly Fee." : "براہ کرم نام، داخلہ کی تاریخ، ابتدائی ادائیگی کی تاریخ تک، اور ماہانہ فیس پُر کریں۔");
             return;
         }
         if (new Date(addStudentFormData.initial_paid_till) < new Date(addStudentFormData.admission_date)) {
-            setError(currentLanguage === 'en' ? "Initial Paid Till Date cannot be earlier than Admission Date." : "ابتدائی ادائیگی کی تاریخ داخلہ کی تاریخ سے پہلے نہیں ہو سکتی۔");
+            setError(currentLanguage === 'en' ? "Initial Paid Till Date cannot be earlier than Admission Date." : "ابتدائی ادائیگی کی تاریخ داخلہ کی تاریخ سے پہلے نہیں ہو سکتی ہے۔");
             return;
         }
 
@@ -1668,7 +1662,6 @@ const App = () => {
             fetchAllStudents();
             fetchPendingStudents();
             fetchAllPayments();
-            // Reset form data after successful submission
             setAddStudentFormData({
                 name: '',
                 address: null,
@@ -1676,6 +1669,8 @@ const App = () => {
                 admission_date: new Date().toISOString().split('T')[0],
                 initial_paid_till: '',
                 monthly_fee: 400,
+                age: null,
+                student_class: null,
             });
         } catch (e) { /* Error handled by handleMutation */ }
     };
@@ -1701,21 +1696,20 @@ const App = () => {
             await handleMutation(
                 `${API_BASE_URL}/students/${studentId}`,
                 'DELETE',
-                { password: passwordConfirmation }, // Pass password for backend verification
+                { password: passwordConfirmation },
                 currentLanguage === 'en' ? `Student '${studentName}' deleted successfully!` : `طالب علم '${studentName}' کامیابی سے حذف کر دیا گیا!`,
                 currentLanguage === 'en' ? `Failed to delete student '${studentName}'. Invalid password or other error.` : `طالب علم '${studentName}' حذف کرنے میں ناکام۔ غلط پاس ورڈ یا کوئی اور خرابی۔`
             );
-            setCurrentPage('allStudents'); // Navigate back after deletion
-            fetchAllStudents(); // Refresh student list
-            fetchPendingStudents(); // Refresh pending list
-            fetchAllPayments(); // Refresh payments for dashboard
+            setCurrentPage('allStudents');
+            fetchAllStudents();
+            fetchPendingStudents();
+            fetchAllPayments();
             setSelectedStudent(null);
             setStudentPayments(null);
         } catch (e) { /* Error handled by handleMutation */ }
     };
 
 
-    // Initial data fetch only if logged in
     useEffect(() => {
         if (isLoggedIn) {
             fetchAllStudents();
@@ -1729,10 +1723,8 @@ const App = () => {
             return <AuthForm handleLogin={handleLogin} setError={setError} currentLanguage={currentLanguage} />;
         }
 
-        if (loading) return null; // LoadingOverlay covers this
+        if (loading) return null;
 
-        // This variable helps decide the initial open/close state of sections in StudentDetail
-        // and also which buttons/info to show.
         const studentDetailViewMode: 'full' | 'pending-summary' =
             (currentPage === 'allStudents' || currentPage === 'addStudent') ? 'full' : 'pending-summary';
 
@@ -1833,18 +1825,18 @@ const App = () => {
             <style>
                 {`
                 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-                @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400..700&display=swap'); /* For Urdu font */
+                @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400..700&display=swap');
                 body {
                     font-family: 'Inter', sans-serif;
                     -webkit-font-smoothing: antialiased;
                     -moz-osx-font-smoothing: grayscale;
                     color: #333;
-                    padding-top: 80px; /* Space for fixed header */
+                    padding-top: 80px;
                 }
-                .lang-ur { /* Apply this class to elements needing Urdu font */
+                .lang-ur {
                     font-family: 'Noto Nastaliq Urdu', serif;
-                    direction: rtl; /* Right-to-left for Urdu */
-                    text-align: right; /* Adjust text alignment for RTL */
+                    direction: rtl;
+                    text-align: right;
                 }
                 input[type="date"]::-webkit-calendar-picker-indicator {
                     filter: invert(0.5);
