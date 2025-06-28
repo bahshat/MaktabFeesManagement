@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Home, Clock, UserPlus, BookOpen, GraduationCap, Search,
     DollarSign, MapPin, Phone, CalendarDays, CheckCircle, XCircle,
@@ -11,7 +11,7 @@ const formatDate = (dateString: string | Date | undefined | null): string => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'N/A'; // Handle invalid date strings
-    const options: Intl.DateTimeFormatOptions = { month: 'short', day: '2-digit', year: '2-digit' };
+    const options: Intl.DateTimeFormatOptions = { month: 'short', day: '2-digit', year: 'numeric' }; // Changed to 'numeric' for YYYY
     return date.toLocaleDateString('en-US', options);
 };
 
@@ -71,19 +71,55 @@ interface HeaderProps {
     setCurrentPage: (page: string) => void;
     currentLanguage: 'en' | 'ur';
     isLoggedIn: boolean; // Added isLoggedIn prop
+    currentPage: string; // Added to conditionally show back button
 }
 
-const Header: React.FC<HeaderProps> = ({ setCurrentPage, currentLanguage, isLoggedIn }) => {
+const Header: React.FC<HeaderProps> = ({ setCurrentPage, currentLanguage, isLoggedIn, currentPage }) => {
     const title = currentLanguage === 'en' ? 'Maktab Fees Portal' : 'مکتب فیس پورٹل';
     const organizationName = currentLanguage === 'en' ? 'Anjuman Abu Hurairah' : 'انجمن ابو ہریرہ';
 
+    // Pages where a back button should be shown
+    const showBackButton = isLoggedIn && (
+        currentPage === 'studentDetail' ||
+        currentPage === 'addStudent' ||
+        currentPage === 'settings' ||
+        currentPage === 'changePassword'
+    );
+
+    const getBackPage = () => {
+        switch (currentPage) {
+            case 'studentDetail':
+                return 'allStudents';
+            case 'addStudent':
+                return 'allStudents';
+            case 'changePassword':
+                return 'settings';
+            case 'settings':
+                return 'allStudents';
+            default:
+                return 'allStudents';
+        }
+    };
+
+
     return (
-        <header className="fixed top-0 left-0 right-0 bg-gradient-to-br from-blue-700 to-purple-800 text-white p-4 pb-6 rounded-b-3xl shadow-xl z-20 font-bold"> {/* Fixed header, reduced padding */}
-            <div className="flex justify-center items-center relative w-full">
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-center tracking-wide leading-tight flex-grow drop-shadow-lg"> {/* Reduced font size */}
+        <header className="fixed top-0 left-0 right-0 bg-gradient-to-br from-blue-700 to-purple-800 text-white p-4 pb-6 rounded-b-3xl shadow-xl z-20 font-bold">
+            <div className="flex justify-between items-center relative w-full px-2 sm:px-4">
+                {showBackButton ? (
+                    <button
+                        onClick={() => setCurrentPage(getBackPage())}
+                        className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition duration-200 shadow-md flex-shrink-0"
+                        title={currentLanguage === 'en' ? 'Back' : 'پیچھے جائیں'}
+                    >
+                        <ArrowLeftCircle className="w-5 h-5 text-white" />
+                    </button>
+                ) : (
+                    <div className="w-8"></div> // Placeholder to keep title centered when no back button
+                )}
+                <h1 className="text-xl font-extrabold text-center tracking-wide leading-tight flex-grow drop-shadow-lg mx-2">
                     {title}
                 </h1>
-                <div className="absolute right-0 flex space-x-2 mr-2 z-20 top-2 sm:top-auto"> {/* Adjusted positioning and z-index */}
+                <div className="flex space-x-2 flex-shrink-0">
                     {isLoggedIn && ( // Only show settings if logged in
                         <button
                             onClick={() => setCurrentPage('settings')}
@@ -119,7 +155,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, setCurrentPage, fe
         { name: currentLanguage === 'en' ? 'Pending' : 'زیر التواء', icon: Clock, page: 'pendingStudents', action: fetchPendingStudents },
         { name: currentLanguage === 'en' ? 'Add' : 'شامل کریں', icon: UserPlus, page: 'addStudent' },
         { name: currentLanguage === 'en' ? 'Dashboard' : 'ڈیش بورڈ', icon: BarChart2, page: 'dashboard', action: fetchAllStudents },
-        { name: currentLanguage === 'en' ? 'Reminders' : 'یاد دہانیاں', icon: BellRing, page: 'reminders', action: fetchAllStudents } // Added Reminders button
+        { name: currentLanguage === 'en' ? 'Reminders' : 'یاد دہانیاں', icon: BellRing, page: 'reminders', action: fetchAllStudents }
     ];
 
     return (
@@ -146,8 +182,8 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, setCurrentPage, fe
 interface StudentListProps {
     students: Student[] | null;
     title: string;
-    onSelectStudent: (student: Student, viewMode: 'full' | 'pending-summary') => void; // Added viewMode
-    currentLanguage: 'en' | 'ur'; // Added for language support
+    onSelectStudent: (student: Student, viewMode: 'full' | 'pending-summary') => void;
+    currentLanguage: 'en' | 'ur';
 }
 
 const StudentList: React.FC<StudentListProps> = ({ students, title, onSelectStudent, currentLanguage }) => {
@@ -158,11 +194,11 @@ const StudentList: React.FC<StudentListProps> = ({ students, title, onSelectStud
     ) || [];
 
     return (
-        <div className="p-6 rounded-2xl mb-6 mx-auto w-full max-w-xl"> {/* Removed bg-white, shadow, border from here */}
+        <div className="mb-6 mx-auto w-full"> {/* Removed px-4 and max-w-xl */}
             <h2 className="text-2xl font-bold mb-5 text-gray-800 text-center">{title}</h2>
 
-            {/* Search Input */}
-            <div className="relative mb-6 bg-white p-3 rounded-xl shadow-sm border border-blue-50"> {/* Added card styling to search */}
+            {/* Search Input - now its own card */}
+            <div className="relative mb-4 bg-white p-6 rounded-2xl shadow-xl border border-blue-50">
                 <input
                     type="text"
                     placeholder={currentLanguage === 'en' ? "Search students by name..." : "طالب علم کا نام تلاش کریں..."}
@@ -174,37 +210,39 @@ const StudentList: React.FC<StudentListProps> = ({ students, title, onSelectStud
             </div>
 
             {!students || students.length === 0 ? (
-                <div className="bg-blue-50 p-6 rounded-xl shadow-inner text-center text-gray-600 mt-8">
+                <div className="bg-blue-50 p-6 rounded-xl shadow-inner text-center text-gray-600 mt-4">
                     <BookOpen className="w-12 h-12 mx-auto mb-4 text-blue-300" />
                     <p className="text-lg font-medium">{currentLanguage === 'en' ? 'No student records found.' : 'طالب علم کے کوئی ریکارڈ نہیں ملے۔'}</p>
                 </div>
             ) : filteredStudents.length === 0 ? (
-                <div className="bg-blue-50 p-6 rounded-xl shadow-inner text-center text-gray-600 mt-8">
+                <div className="bg-blue-50 p-6 rounded-xl shadow-inner text-center text-gray-600 mt-4">
                     <Search className="w-12 h-12 mx-auto mb-4 text-blue-300" />
                     <p className="text-lg font-medium">{currentLanguage === 'en' ? 'No students match your search criteria.' : 'آپ کے تلاش کے معیار سے کوئی طالب علم نہیں ملا۔'}</p>
                 </div>
             ) : (
-                <ul className="bg-white rounded-2xl shadow-xl border border-blue-50 divide-y divide-blue-50"> {/* Added card styling to the list */}
-                    {filteredStudents.map(student => (
-                        <li
-                            key={student.id}
-                            onClick={() => onSelectStudent(student, 'full')} // Default to 'full' view for All Students
-                            className="py-4 px-3 flex items-center justify-between transition duration-200 ease-in-out hover:bg-blue-50 rounded-xl cursor-pointer -mx-3"
-                        >
-                            <div className="flex items-center flex-1 min-w-0"> {/* Flex container for icon and text */}
-                                <GraduationCap className="w-6 h-6 mr-3 text-blue-600 flex-shrink-0 drop-shadow-sm" />
-                                <div className="flex-1 overflow-hidden">
-                                    <p className="text-lg font-semibold text-gray-900 truncate">
-                                        <span className="font-normal mr-1 text-base">{currentLanguage === 'en' ? 'Roll No.:' : 'رول نمبر:'}</span> <span className="font-normal text-base">{student.id}</span> - {student.name}
-                                    </p>
-                                    <p className="text-sm text-gray-500 mt-1">
-                                        {student.address || 'N/A'}
-                                    </p>
+                <div className="bg-white rounded-2xl shadow-xl border border-blue-50 overflow-hidden"> {/* Removed max-h and overflow-y-auto */}
+                    <ul className="divide-y divide-blue-50">
+                        {filteredStudents.map(student => (
+                            <li
+                                key={student.id}
+                                onClick={() => onSelectStudent(student, 'full')} // Default to 'full' view for All Students
+                                className="py-4 px-3 flex items-center justify-between transition duration-200 ease-in-out hover:bg-blue-50 rounded-xl cursor-pointer -mx-3"
+                            >
+                                <div className="flex items-center flex-1 min-w-0">
+                                    <GraduationCap className="w-6 h-6 mr-3 text-blue-600 flex-shrink-0 drop-shadow-sm" />
+                                    <div className="flex-1 overflow-hidden">
+                                        <p className="text-lg font-semibold text-gray-900 truncate">
+                                            {student.name}
+                                        </p>
+                                        <p className="text-sm text-gray-500 mt-1">
+                                            {student.address || 'N/A'}
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             )}
         </div>
     );
@@ -212,148 +250,147 @@ const StudentList: React.FC<StudentListProps> = ({ students, title, onSelectStud
 
 // AddStudentForm.tsx
 interface AddStudentFormProps {
-    handleAddStudent: (studentData: {
+    studentData: {
         name: string;
         address: string | null;
         phone: string | null;
         admission_date: string;
         initial_paid_till: string;
         monthly_fee: number;
-    }) => Promise<void>;
+    };
+    setStudentData: React.Dispatch<React.SetStateAction<{
+        name: string;
+        address: string | null;
+        phone: string | null;
+        admission_date: string;
+        initial_paid_till: string;
+        monthly_fee: number;
+    }>>;
     setError: (message: string | null) => void;
-    currentLanguage: 'en' | 'ur'; // Added for language support
+    currentLanguage: 'en' | 'ur';
 }
 
-const AddStudentForm: React.FC<AddStudentFormProps> = ({ handleAddStudent, setError, currentLanguage }) => {
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD for default date input
+const AddStudentForm: React.FC<AddStudentFormProps> = ({ studentData, setStudentData, setError, currentLanguage }) => {
+    const today = new Date().toISOString().split('T')[0];
 
-    const [name, setName] = useState<string>('');
-    const [address, setAddress] = useState<string>('');
-    const [phone, setPhone] = useState<string>('');
-    const [admissionDate, setAdmissionDate] = useState<string>(today); // Default to today's date
-    const [initialPaidTill, setInitialPaidTill] = useState<string>('');
-    const [monthlyFee, setMonthlyFee] = useState<string>('');
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!name || !admissionDate || !initialPaidTill || monthlyFee === '') {
-            setError(currentLanguage === 'en' ? "Please fill in Name, Admission Date, Initial Paid Till date, and Monthly Fee." : "براہ کرم نام، داخلہ کی تاریخ، ابتدائی ادائیگی کی تاریخ تک، اور ماہانہ فیس پُر کریں۔");
-            return;
+    useEffect(() => {
+        // Initialize if not already set (e.g., on first render or page refresh)
+        if (!studentData.admission_date) {
+            setStudentData(prev => ({ ...prev, admission_date: today }));
         }
-
-        // Validate initialPaidTill date is not less than admissionDate
-        if (new Date(initialPaidTill) < new Date(admissionDate)) {
-            setError(currentLanguage === 'en' ? "Initial Paid Till Date cannot be earlier than Admission Date." : "ابتدائی ادائیگی کی تاریخ داخلہ کی تاریخ سے پہلے نہیں ہو سکتی۔");
-            return;
+        if (studentData.monthly_fee === undefined || studentData.monthly_fee === null || isNaN(studentData.monthly_fee)) { // Check for undefined, null, or NaN
+            setStudentData(prev => ({ ...prev, monthly_fee: 400 })); // Default monthly fee to 400
         }
+    }, [studentData.admission_date, studentData.monthly_fee, setStudentData, today]);
 
-        await handleAddStudent({
-            name,
-            address: address || null,
-            phone: phone || null,
-            admission_date: admissionDate,
-            initial_paid_till: initialPaidTill,
-            monthly_fee: parseFloat(monthlyFee)
-        });
-        setName('');
-        setAddress('');
-        setPhone('');
-        setAdmissionDate(today); // Reset to today
-        setInitialPaidTill('');
-        setMonthlyFee('');
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { id, value } = e.target;
+        setStudentData(prev => ({ ...prev, [id]: value }));
     };
 
+    const handleMonthlyFeeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setStudentData(prev => ({ ...prev, monthly_fee: parseFloat(e.target.value) || 0 }));
+    };
+
+
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full max-w-xl border border-blue-50">
+        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}> {/* Removed px-4 and max-w-xl */}
             <h2 className="text-2xl font-bold mb-5 text-gray-800 text-center">{currentLanguage === 'en' ? 'Add New Student' : 'نیا طالب علم شامل کریں'}</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700">{currentLanguage === 'en' ? 'Student Name' : 'طالب علم کا نام'}</label>
+            <form className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center">
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 sm:w-1/3 sm:min-w-[120px] mb-1 sm:mb-0">
+                        {currentLanguage === 'en' ? 'Student Name' : 'طالب علم کا نام'}
+                    </label>
                     <input
                         type="text"
                         id="name"
-                        className="mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        className="flex-1 mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+                        value={studentData.name}
+                        onChange={handleChange}
                         placeholder={currentLanguage === 'en' ? "e.g., Emily White" : "مثلاً، ایملی وائٹ"}
                         required
                     />
                 </div>
-                <div>
-                    <label htmlFor="address" className="block text-sm font-medium text-gray-700">{currentLanguage === 'en' ? 'Address (Optional)' : 'پتہ (اختیاری)'}</label>
-                    <input
-                        type="text"
+                <div className="flex flex-col sm:flex-row sm:items-start"> {/* Use items-start for textarea */}
+                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 sm:w-1/3 sm:min-w-[120px] mb-1 sm:mb-0 pt-2">
+                        {currentLanguage === 'en' ? 'Address (Optional)' : 'پتہ (اختیاری)'}
+                    </label>
+                    <textarea
                         id="address"
-                        className="mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
+                        rows={3} // 3 line height
+                        className="flex-1 mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out resize-y"
+                        value={studentData.address || ''}
+                        onChange={handleChange}
                         placeholder={currentLanguage === 'en' ? "e.g., 45 Elm Street, Apt 3B" : "مثلاً، 45 ایلم اسٹریٹ، اپارٹمنٹ 3 بی"}
-                    />
+                    ></textarea>
                 </div>
-                <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">{currentLanguage === 'en' ? 'Phone (for reminders)' : 'فون (یاد دہانیوں کے لیے)'}</label>
+                <div className="flex flex-col sm:flex-row sm:items-center">
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 sm:w-1/3 sm:min-w-[120px] mb-1 sm:mb-0">
+                        {currentLanguage === 'en' ? 'Phone (for reminders)' : 'فون (یاد دہانیوں کے لیے)'}
+                    </label>
                     <input
                         type="tel"
                         id="phone"
-                        className="mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
+                        className="flex-1 mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+                        value={studentData.phone || ''}
+                        onChange={handleChange}
                         placeholder={currentLanguage === 'en' ? "e.g., +919876543210" : "مثلاً، +919876543210"}
                     />
                 </div>
-                <div>
-                    <label htmlFor="monthlyFee" className="block text-sm font-medium text-gray-700">{currentLanguage === 'en' ? 'Monthly Fee (₹)' : 'ماہانہ فیس (₹)'}</label>
+                <div className="flex flex-col sm:flex-row sm:items-center">
+                    <label htmlFor="monthly_fee" className="block text-sm font-medium text-gray-700 sm:w-1/3 sm:min-w-[120px] mb-1 sm:mb-0">
+                        {currentLanguage === 'en' ? 'Monthly Fee (₹)' : 'ماہانہ فیس (₹)'}
+                    </label>
                     <input
                         type="number"
-                        id="monthlyFee"
-                        className="mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
-                        value={monthlyFee}
-                        onChange={(e) => setMonthlyFee(e.target.value)}
+                        id="monthly_fee"
+                        className="flex-1 mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+                        value={studentData.monthly_fee}
+                        onChange={handleMonthlyFeeChange}
                         placeholder={currentLanguage === 'en' ? "e.g., 2000.00" : "مثلاً، 2000.00"}
                         step="0.01"
                         required
                     />
                 </div>
-                <div>
-                    <label htmlFor="admissionDate" className="block text-sm font-medium text-gray-700">{currentLanguage === 'en' ? 'Admission Date' : 'داخلہ کی تاریخ'}</label>
+                <div className="flex flex-col sm:flex-row sm:items-center">
+                    <label htmlFor="admission_date" className="block text-sm font-medium text-gray-700 sm:w-1/3 sm:min-w-[120px] mb-1 sm:mb-0">
+                        {currentLanguage === 'en' ? 'Admission Date' : 'داخلہ کی تاریخ'}
+                    </label>
                     <input
                         type="date"
-                        id="admissionDate"
-                        className="mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
-                        value={admissionDate}
-                        onChange={(e) => setAdmissionDate(e.target.value)}
+                        id="admission_date"
+                        className="flex-1 mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+                        value={studentData.admission_date}
+                        onChange={handleChange}
                         required
                     />
                 </div>
-                <div>
-                    <label htmlFor="initialPaidTill" className="block text-sm font-medium text-gray-700">{currentLanguage === 'en' ? 'Initial Paid Till Date' : 'ابتدائی ادائیگی کی تاریخ تک'}</label>
+                <div className="flex flex-col sm:flex-row sm:items-center">
+                    <label htmlFor="initial_paid_till" className="block text-sm font-medium text-gray-700 sm:w-1/3 sm:min-w-[120px] mb-1 sm:mb-0">
+                        {currentLanguage === 'en' ? 'Initial Paid Till Date' : 'ابتدائی ادائیگی کی تاریخ تک'}
+                    </label>
                     <input
                         type="date"
-                        id="initialPaidTill"
-                        className="mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
-                        value={initialPaidTill}
-                        onChange={(e) => setInitialPaidTill(e.target.value)}
+                        id="initial_paid_till"
+                        className="flex-1 mt-1 block w-full border border-gray-200 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+                        value={studentData.initial_paid_till}
+                        onChange={handleChange}
                         required
                     />
                 </div>
-                <button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out text-lg tracking-wide transform hover:scale-105 active:scale-95"
-                >
-                    {currentLanguage === 'en' ? 'Add Student' : 'طالب علم شامل کریں'}
-                </button>
             </form>
         </div>
     );
 };
+
 
 // StudentDetail.tsx
 interface StudentDetailProps {
     student: Student;
     payments: Payment[];
     onUpdatePayment: (studentId: number, paidTillDate: string) => Promise<void>;
-    onBackToList: () => void;
-    handleDeleteStudent: (studentId: number, studentName: string, passwordConfirmation: string) => Promise<void>; // Added for deletion
+    handleDeleteStudent: (studentId: number, studentName: string, passwordConfirmation: string) => Promise<void>;
     setError: (message: string | null) => void;
     setSuccessMessage: (message: string | null) => void;
     pendingDataForStudent: {
@@ -361,13 +398,12 @@ interface StudentDetailProps {
         pending_amount: number;
         paid_till: string | null;
     };
-    viewMode: 'full' | 'pending-summary'; // New prop to control view
-    currentLanguage: 'en' | 'ur'; // Added for language support
+    viewMode: 'full' | 'pending-summary';
+    currentLanguage: 'en' | 'ur';
 }
 
-const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpdatePayment, onBackToList, handleDeleteStudent, setError, setSuccessMessage, pendingDataForStudent, viewMode, currentLanguage }) => {
+const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpdatePayment, handleDeleteStudent, setError, setSuccessMessage, pendingDataForStudent, viewMode, currentLanguage }) => {
     const [newPaidTill, setNewPaidTill] = useState<string>('');
-    // Initial collapse state based on viewMode
     const [isBiodataOpen, setIsBiodataOpen] = useState(viewMode === 'full');
     const [isCurrentPendingOpen, setIsCurrentPendingOpen] = useState(viewMode === 'pending-summary');
     const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(viewMode === 'pending-summary');
@@ -388,11 +424,22 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpda
     };
 
     const calculateNewPaidTill = (months: number) => {
-        const lastPaid = pendingDataForStudent.paid_till ? new Date(pendingDataForStudent.paid_till) : new Date(student.admission_date);
-        lastPaid.setMonth(lastPaid.getMonth() + months);
-        // Set to the last day of the month to avoid issues with short months
-        lastPaid.setDate(new Date(lastPaid.getFullYear(), lastPaid.getMonth() + 1, 0).getDate());
-        setNewPaidTill(lastPaid.toISOString().split('T')[0]);
+        const baseDate = pendingDataForStudent.paid_till ? new Date(pendingDataForStudent.paid_till) : new Date(student.admission_date);
+        
+        let newDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
+
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        if (baseDate <= today) {
+            newDate.setMonth(newDate.getMonth() + 1);
+        }
+        
+        newDate.setMonth(newDate.getMonth() + (months -1)); 
+
+        newDate.setDate(new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0).getDate());
+        
+        setNewPaidTill(newDate.toISOString().split('T')[0]);
     };
 
     const handleClickWhatsAppReminder = () => {
@@ -438,25 +485,13 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpda
         setDeletePassword('');
     };
 
-    const isFeesCleared = student.pending_amount === 0 || student.pending_amount === undefined;
+    const isFeesCleared = pendingDataForStudent.pending_amount === 0 || pendingDataForStudent.pending_amount === undefined;
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full max-w-xl border border-blue-50">
-             {/* Back to List Arrow Icon - Top position */}
-            <button
-                onClick={onBackToList}
-                className="absolute top-4 left-4 p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition duration-150 shadow-md"
-                title={currentLanguage === 'en' ? 'Back to list' : 'فہرست پر واپس جائیں'}
-            >
-                <ArrowLeftCircle className="w-6 h-6 text-gray-700" />
-            </button>
-
+        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full border border-blue-50"> {/* Removed max-w-xl */}
             <h2 className="text-2xl font-bold mb-2 text-gray-800 text-center">
-                {student.name} <span className="font-normal text-base text-gray-500">({currentLanguage === 'en' ? 'Roll No.:' : 'رول نمبر:'} {student.id})</span>
+                {student.name}
             </h2>
-            <p className="text-sm text-gray-500 text-center mb-6">
-                {currentLanguage === 'en' ? 'Monthly Fee:' : 'ماہانہ فیس:'} ₹{student.monthly_fee}
-            </p>
 
             {/* Student Biodata Section */}
             <div className="border border-gray-200 rounded-xl mb-4 overflow-hidden shadow-sm">
@@ -469,6 +504,7 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpda
                 </button>
                 {isBiodataOpen && (
                     <div className="p-4 space-y-2 text-gray-700 text-base border-t border-gray-200">
+                        <p className="flex items-center"><User className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Roll No.:' : 'رول نمبر:'}</span> {student.id}</p> {/* Moved Roll No. here */}
                         <p className="flex items-center"><MapPin className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Address:' : 'پتہ:'}</span> {student.address || 'N/A'}</p>
                         <p className="flex items-center"><Phone className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Phone:' : 'فون:'}</span> <a href={`tel:${student.phone}`} className="text-blue-600 hover:underline">{student.phone || 'N/A'}</a></p>
                         <p className="flex items-center"><CalendarDays className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Admission Date:' : 'داخلہ کی تاریخ:'}</span> {formatDate(student.admission_date)}</p>
@@ -491,23 +527,27 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpda
                         {isFeesCleared ? (
                             <div className="bg-green-50 p-4 rounded-xl shadow-inner mb-6 space-y-2 text-gray-700 text-base border border-green-100 flex items-center flex-wrap">
                                 <CheckCircle className="w-8 h-8 mr-3 text-green-600 flex-shrink-0" />
-                                <p className="font-bold text-lg text-green-700 flex-grow">
-                                    {currentLanguage === 'en' ? 'Fees Cleared!' : 'فیس صاف شدہ!'}
-                                </p>
-                                <p className="text-sm text-gray-600 flex-grow-0 w-full pl-11">
-                                    {currentLanguage === 'en' ? 'Last Paid Till:' : 'آخری ادائیگی کی تاریخ تک:'} {formatDate(pendingDataForStudent.paid_till)}
-                                </p>
+                                <div className="flex-grow">
+                                    <p className="font-bold text-lg text-green-700">
+                                        {currentLanguage === 'en' ? 'Fees Cleared!' : 'فیس صاف شدہ!'}
+                                    </p>
+                                    <p className="text-sm text-gray-600 mt-1">
+                                        {currentLanguage === 'en' ? 'Last Paid Till:' : 'آخری ادائیگی کی تاریخ تک:'} {formatDate(pendingDataForStudent.paid_till)}
+                                    </p>
+                                </div>
                             </div>
                         ) : (
                             <div className="bg-red-50 p-4 rounded-xl shadow-inner mb-6 space-y-2 text-gray-700 text-base border border-red-100 flex items-center flex-wrap">
                                 <XCircle className="w-8 h-8 mr-3 text-red-600 flex-shrink-0" />
-                                <p className="font-bold text-lg text-red-700 flex-grow">
-                                    {currentLanguage === 'en' ? 'Pending:' : 'باقی:'} ₹{pendingDataForStudent.pending_amount}
-                                    <span className="font-normal text-sm ml-2">({pendingDataForStudent.pending_months} {currentLanguage === 'en' ? 'months' : 'مہینے'})</span>
-                                </p>
-                                <p className="text-sm text-gray-600 flex-grow-0 w-full pl-11">
-                                    {currentLanguage === 'en' ? 'Last Paid Till:' : 'آخری ادائیگی کی تاریخ تک:'} {formatDate(pendingDataForStudent.paid_till)}
-                                </p>
+                                <div className="flex-grow">
+                                    <p className="font-bold text-lg text-red-700">
+                                        {currentLanguage === 'en' ? 'Pending:' : 'باقی:'} ₹{pendingDataForStudent.pending_amount}
+                                        <span className="font-normal text-sm ml-2">({pendingDataForStudent.pending_months} {currentLanguage === 'en' ? 'months' : 'مہینے'})</span>
+                                    </p>
+                                    <p className="text-sm text-gray-600 mt-1">
+                                        {currentLanguage === 'en' ? 'Last Paid Till:' : 'آخری ادائیگی کی تاریخ تک:'} {formatDate(pendingDataForStudent.paid_till)}
+                                    </p>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -676,24 +716,21 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpda
 // Dashboard.tsx
 interface DashboardProps {
     students: Student[] | null;
-    currentLanguage: 'en' | 'ur'; // Added for language support
+    currentLanguage: 'en' | 'ur';
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ students, currentLanguage }) => {
     if (!students || students.length === 0) {
         return (
-            <div className="p-6 rounded-2xl mb-6 mx-auto w-full max-w-xl"> {/* Removed bg-white, shadow, border */}
+            <div className="mb-6 mx-auto w-full"> {/* Removed px-4 and max-w-xl */}
                 <div className="bg-blue-50 p-6 rounded-xl shadow-inner text-center text-gray-600">
                     <BarChart2 className="w-12 h-12 mx-auto mb-4 text-blue-300" />
-                    <p className="text-lg font-medium">{currentLanguage === 'en' ? 'No student data available for the dashboard.' : 'ڈیش بورڈ کے لیے کوئی طالب علم ڈیٹا دستیاب نہیں ہے۔'}</p>
+                    <p className="text-lg font-medium">{currentLanguage === 'en' ? 'No student data available for dashboard.' : 'ڈیش بورڈ کے لیے کوئی طالب علم ڈیٹا دستیاب نہیں ہے۔'}</p>
                 </div>
             </div>
         );
     }
 
-    // --- Data Preparation for Charts ---
-
-    // 1. Pending vs. Cleared Students (Pie Chart)
     const totalStudents = students.length;
     const pendingStudentsCount = students.filter(s => s.pending_amount && s.pending_amount > 0).length;
     const clearedStudentsCount = totalStudents - pendingStudentsCount;
@@ -701,52 +738,52 @@ const Dashboard: React.FC<DashboardProps> = ({ students, currentLanguage }) => {
 
 
     const pieData = [
-        { name: currentLanguage === 'en' ? 'Cleared Fees' : 'صاف شدہ فیس', value: clearedStudentsCount },
-        { name: currentLanguage === 'en' ? 'Pending Fees' : 'زیر التواء فیس', value: pendingStudentsCount },
+        { name: currentLanguage === 'en' ? 'Cleared' : 'صاف شدہ', value: clearedStudentsCount },
+        { name: currentLanguage === 'en' ? 'Pending' : 'زیر التواء', value: pendingStudentsCount },
     ];
-    const PIE_COLORS = ['#82ca9d', '#ff7300']; // Green for cleared, Orange for pending
+    // Modern and interesting color palette
+    const PIE_COLORS = ['#4CAF50', '#FFC107', '#2196F3', '#9C27B0'];
 
 
-    // --- Render Dashboard ---
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full max-w-2xl border border-blue-50">
+        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full border border-blue-50 flex flex-col items-center"> {/* Removed px-4 and max-w-2xl */}
             <h2 className="text-2xl font-bold mb-6 text-gray-800 text-center">{currentLanguage === 'en' ? 'Data Dashboard' : 'ڈیٹا ڈیش بورڈ'}</h2>
 
             {/* Key Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"> {/* Changed to 2 or 4 columns for horizontal stacking */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 w-full">
                 <div className="bg-blue-50 p-5 rounded-xl shadow-md text-center border border-blue-100">
                     <p className="text-xl font-bold text-blue-700">{totalStudents}</p>
                     <p className="text-sm text-gray-600">{currentLanguage === 'en' ? 'Total Students' : 'کل طلباء'}</p>
                 </div>
                 <div className="bg-red-50 p-5 rounded-xl shadow-md text-center border border-red-100">
                     <p className="text-xl font-bold text-red-700">{pendingStudentsCount}</p>
-                    <p className="text-sm text-gray-600">{currentLanguage === 'en' ? 'Students with Pending Fees' : 'زیر التواء فیس والے طلباء'}</p>
+                    <p className="text-sm text-gray-600">{currentLanguage === 'en' ? 'Pending Students' : 'زیر التواء طلباء'}</p>
                 </div>
                 <div className="bg-green-50 p-5 rounded-xl shadow-md text-center border border-green-100">
                     <p className="text-xl font-bold text-green-700">{clearedStudentsCount}</p>
-                    <p className="text-sm text-gray-600">{currentLanguage === 'en' ? 'Students with Cleared Fees' : 'صاف شدہ فیس والے طلباء'}</p>
+                    <p className="text-sm text-gray-600">{currentLanguage === 'en' ? 'Cleared Students' : 'صاف شدہ طلباء'}</p>
                 </div>
                 <div className="bg-yellow-50 p-5 rounded-xl shadow-md text-center border border-yellow-100">
                     <p className="text-xl font-bold text-yellow-700">₹{totalPendingAmount.toFixed(2)}</p>
-                    <p className="text-sm text-gray-600">{currentLanguage === 'en' ? 'Total Pending Amount' : 'کل زیر التواء رقم'}</p>
+                    <p className="text-sm text-gray-600">{currentLanguage === 'en' ? 'Total Pending' : 'کل زیر التواء'}</p>
                 </div>
             </div>
 
             {/* Charts */}
-            <div className="space-y-8">
+            <div className="space-y-8 w-full flex flex-col items-center">
                 {/* Pending vs Cleared Pie Chart */}
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-5 rounded-xl shadow-md border border-purple-100">
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-5 rounded-xl shadow-md border border-purple-100 w-full">
                     <h3 className="text-lg font-bold mb-4 text-gray-800 text-center flex items-center justify-center">
-                        <PieChart className="w-5 h-5 mr-2 text-purple-600" /> {currentLanguage === 'en' ? 'Pending vs. Cleared Students' : 'زیر التواء بمقابلہ صاف شدہ طلباء'}
+                        <PieChart className="w-5 h-5 mr-2 text-purple-600" /> {currentLanguage === 'en' ? 'Fees Status' : 'فیس کی حیثیت'}
                     </h3>
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={250}>
                         <RechartsPieChart>
                             <Pie
                                 data={pieData}
                                 cx="50%"
                                 cy="50%"
                                 labelLine={false}
-                                outerRadius={100}
+                                outerRadius={80}
                                 fill="#8884d8"
                                 dataKey="value"
                             >
@@ -755,7 +792,7 @@ const Dashboard: React.FC<DashboardProps> = ({ students, currentLanguage }) => {
                                 ))}
                             </Pie>
                             <Tooltip formatter={(value, name) => [`${value} ${currentLanguage === 'en' ? 'students' : 'طلباء'}`, name]} />
-                            <Legend />
+                            <Legend layout="horizontal" align="center" verticalAlign="bottom" />
                         </RechartsPieChart>
                     </ResponsiveContainer>
                 </div>
@@ -782,7 +819,7 @@ const ReminderList: React.FC<ReminderListProps> = ({ allStudents, setError, setS
 
     const filteredStudents = allStudents?.filter(student => {
         // Filter by search term first
-        const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = searchTerm ? student.name.toLowerCase().includes(searchTerm.toLowerCase()) : true;
         if (!matchesSearch) return false;
 
         // Determine the actual next due date based on paid_till or admission_date
@@ -905,7 +942,7 @@ const ReminderList: React.FC<ReminderListProps> = ({ allStudents, setError, setS
     };
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full max-w-xl border border-blue-50">
+        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full border border-blue-50"> {/* Removed max-w-xl */}
             <h2 className="text-2xl font-bold mb-5 text-gray-800 text-center flex items-center justify-center">
                 <BellRing className="w-7 h-7 mr-3 text-orange-500" />
                 {currentLanguage === 'en' ? 'Reminders' : 'یاد دہانیاں'}
@@ -1061,7 +1098,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ handleLogin, setError, currentLangu
     };
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full max-w-md border border-blue-50">
+        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full border border-blue-50"> {/* Removed max-w-md and px-4 */}
             <h2 className="text-2xl font-bold mb-6 text-gray-800 text-center">
                 {currentLanguage === 'en' ? 'Admin Login' : 'ایڈمن لاگ ان'}
             </h2>
@@ -1145,15 +1182,14 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ handleChangePas
             setOldPassword('');
             setNewPassword('');
             setConfirmNewPassword('');
-            // Success message is set by handleChangePassword in App.tsx
-            setCurrentPage('settings'); // Navigate back to settings after successful change
+            setCurrentPage('settings');
         } catch (error) {
             // Error handled by handleChangePassword, which sets global error state
         }
     };
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full max-w-xl border border-blue-50">
+        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full border border-blue-50"> {/* Removed max-w-xl and px-4 */}
             <h2 className="text-2xl font-bold mb-5 text-gray-800 text-center">
                 {currentLanguage === 'en' ? 'Change Admin Password' : 'ایڈمن پاس ورڈ تبدیل کریں'}
             </h2>
@@ -1240,7 +1276,7 @@ interface SettingsPageProps {
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ setCurrentPage, currentLanguage, toggleLanguage, handleChangePassword, setError, setSuccessMessage, handleLogout }) => {
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full max-w-xl border border-blue-50">
+        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full border border-blue-50"> {/* Removed max-w-xl and px-4 */}
             <h2 className="text-2xl font-bold mb-5 text-gray-800 text-center">
                 {currentLanguage === 'en' ? 'Settings' : 'ترتیبات'}
             </h2>
@@ -1316,11 +1352,11 @@ const PendingStudentList: React.FC<PendingStudentListProps> = ({ students, title
     });
 
     return (
-        <div className="p-6 rounded-2xl mb-6 mx-auto w-full max-w-xl"> {/* Removed bg-white, shadow, border */}
+        <div className="mb-6 mx-auto w-full"> {/* Removed px-4 and max-w-xl */}
             <h2 className="text-2xl font-bold mb-5 text-gray-800 text-center">{title}</h2>
 
-            {/* Search Input */}
-            <div className="relative mb-6 bg-white p-3 rounded-xl shadow-sm border border-blue-50">
+            {/* Search Input - now its own card */}
+            <div className="relative mb-4 bg-white p-6 rounded-2xl shadow-xl border border-blue-50">
                 <input
                     type="text"
                     placeholder={currentLanguage === 'en' ? "Search students by name..." : "طالب علم کا نام تلاش کریں..."}
@@ -1351,46 +1387,48 @@ const PendingStudentList: React.FC<PendingStudentListProps> = ({ students, title
 
 
             {!students || students.length === 0 ? (
-                <div className="bg-blue-50 p-6 rounded-xl shadow-inner text-center text-gray-600 mt-8">
+                <div className="bg-blue-50 p-6 rounded-xl shadow-inner text-center text-gray-600 mt-4">
                     <Clock className="w-12 h-12 mx-auto mb-4 text-blue-300" />
                     <p className="text-lg font-medium">{currentLanguage === 'en' ? 'No students with pending fees found.' : 'زیر التواء فیس والے کوئی طالب علم نہیں ملے۔'}</p>
                 </div>
             ) : filteredStudents.length === 0 ? (
-                <div className="bg-blue-50 p-6 rounded-xl shadow-inner text-center text-gray-600 mt-8">
+                <div className="bg-blue-50 p-6 rounded-xl shadow-inner text-center text-gray-600 mt-4">
                     <Search className="w-12 h-12 mx-auto mb-4 text-blue-300" />
                     <p className="text-lg font-medium">{currentLanguage === 'en' ? 'No students match your search criteria.' : 'آپ کے تلاش کے معیار سے کوئی طالب علم نہیں ملا۔'}</p>
                 </div>
             ) : (
-                <ul className="bg-white rounded-2xl shadow-xl border border-blue-50 divide-y divide-blue-50">
-                    {sortedStudents.map(student => (
-                        <li
-                            key={student.id}
-                            onClick={() => onSelectStudent(student, 'pending-summary')} // Navigate to 'pending-summary' view
-                            className="py-4 px-3 flex items-center justify-between transition duration-200 ease-in-out hover:bg-blue-50 rounded-xl cursor-pointer -mx-3"
-                        >
-                            <div className="flex-1 min-w-0 flex items-center">
-                                <XCircle className="w-6 h-6 mr-3 text-red-500 flex-shrink-0 drop-shadow-sm" /> {/* Changed icon */}
-                                <div className="flex-1 overflow-hidden">
-                                    <p className="text-lg font-semibold text-gray-900 truncate">{student.name}</p>
-                                    <p className="text-sm text-gray-500 flex items-center mt-1">
-                                        <span className="font-normal mr-1">{currentLanguage === 'en' ? 'Roll No.:' : 'رول نمبر:'}</span> <span className="font-normal">{student.id}</span>
+                <div className="bg-white rounded-2xl shadow-xl border border-blue-50 overflow-hidden"> {/* Removed max-h and overflow-y-auto */}
+                    <ul className="divide-y divide-blue-50">
+                        {sortedStudents.map(student => (
+                            <li
+                                key={student.id}
+                                onClick={() => onSelectStudent(student, 'pending-summary')} // Navigate to 'pending-summary' view
+                                className="py-4 px-3 flex items-center justify-between transition duration-200 ease-in-out hover:bg-blue-50 rounded-xl cursor-pointer -mx-3"
+                            >
+                                <div className="flex-1 min-w-0 flex items-center">
+                                    <XCircle className="w-6 h-6 mr-3 text-red-500 flex-shrink-0 drop-shadow-sm" />
+                                    <div className="flex-1 overflow-hidden">
+                                        <p className="text-lg font-semibold text-gray-900 truncate">{student.name}</p>
+                                        <p className="text-sm text-gray-500 flex items-center mt-1">
+                                            <span className="font-normal mr-1">{currentLanguage === 'en' ? 'Roll No.:' : 'رول نمبر:'}</span> <span className="font-normal">{student.id}</span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="text-right ml-4">
+                                    <p className="text-lg font-bold text-red-500 flex items-center justify-end">
+                                        ₹{student.pending_amount}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        {currentLanguage === 'en' ? 'Paid Till:' : 'ادائیگی کی تاریخ تک:'} {formatDate(student.paid_till)}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        ({student.pending_months} {currentLanguage === 'en' ? 'months pending' : 'مہینے زیر التواء'})
                                     </p>
                                 </div>
-                            </div>
-                            <div className="text-right ml-4">
-                                <p className="text-lg font-bold text-red-500 flex items-center justify-end">
-                                    ₹{student.pending_amount}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    {currentLanguage === 'en' ? 'Paid Till:' : 'ادائیگی کی تاریخ تک:'} {formatDate(student.paid_till)}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    ({student.pending_months} {currentLanguage === 'en' ? 'months pending' : 'مہینے زیر التواء'})
-                                </p>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             )}
         </div>
     );
@@ -1420,6 +1458,16 @@ const App = () => {
     const [currentLanguage, setCurrentLanguage] = useState<'en' | 'ur'>('en');
     // State for login status
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // Start as false, require login
+
+    // State for AddStudentForm data (lifted up for external button)
+    const [addStudentFormData, setAddStudentFormData] = useState({
+        name: '',
+        address: null,
+        phone: null,
+        admission_date: '',
+        initial_paid_till: '',
+        monthly_fee: 400, // Default monthly fee
+    });
 
     // Base URL for the Flask API - Use your actual PythonAnywhere URL here
     const API_BASE_URL = 'https://bahshat.pythonanywhere.com'; // User's provided URL
@@ -1589,7 +1637,7 @@ const App = () => {
                 `${API_BASE_URL}/change_password`,
                 'PUT',
                 passwords,
-                currentLanguage === 'en' ? "Password changed successfully!" : "پاس ورڈ کامیابی سے تبدیل ہو گیا۔",
+                currentLanguage === 'en' ? "Password changed successfully!" : "پاس ورڈ کامیابی سے تبدیل ہو گیا ہے۔",
                 currentLanguage === 'en' ? "Failed to change password. Please check old password." : "پاس ورڈ تبدیل کرنے میں ناکام۔ براہ کرم پرانا پاس ورڈ چیک کریں۔"
             );
             setCurrentPage('settings'); // Stay on settings or go back to main if preferred
@@ -1597,19 +1645,22 @@ const App = () => {
     };
 
 
-    const handleAddStudent = async (studentData: {
-        name: string;
-        address: string | null;
-        phone: string | null;
-        admission_date: string;
-        initial_paid_till: string;
-        monthly_fee: number;
-    }) => {
+    const handleAddStudent = async () => {
+        // Validation moved here from AddStudentForm
+        if (!addStudentFormData.name || !addStudentFormData.admission_date || !addStudentFormData.initial_paid_till || addStudentFormData.monthly_fee === 0) {
+            setError(currentLanguage === 'en' ? "Please fill in Name, Admission Date, Initial Paid Till date, and Monthly Fee." : "براہ کرم نام، داخلہ کی تاریخ، ابتدائی ادائیگی کی تاریخ تک، اور ماہانہ فیس پُر کریں۔");
+            return;
+        }
+        if (new Date(addStudentFormData.initial_paid_till) < new Date(addStudentFormData.admission_date)) {
+            setError(currentLanguage === 'en' ? "Initial Paid Till Date cannot be earlier than Admission Date." : "ابتدائی ادائیگی کی تاریخ داخلہ کی تاریخ سے پہلے نہیں ہو سکتی۔");
+            return;
+        }
+
         try {
             await handleMutation(
                 `${API_BASE_URL}/students`,
                 'POST',
-                studentData,
+                addStudentFormData,
                 currentLanguage === 'en' ? "Student added successfully!" : "طالب علم کامیابی سے شامل کر دیا گیا!",
                 currentLanguage === 'en' ? "Failed to add student." : "طالب علم شامل کرنے میں ناکام۔"
             );
@@ -1617,6 +1668,15 @@ const App = () => {
             fetchAllStudents();
             fetchPendingStudents();
             fetchAllPayments();
+            // Reset form data after successful submission
+            setAddStudentFormData({
+                name: '',
+                address: null,
+                phone: null,
+                admission_date: new Date().toISOString().split('T')[0],
+                initial_paid_till: '',
+                monthly_fee: 400,
+            });
         } catch (e) { /* Error handled by handleMutation */ }
     };
 
@@ -1683,33 +1743,38 @@ const App = () => {
                     <StudentList
                         students={students}
                         title={currentLanguage === 'en' ? "All Students" : "تمام طلباء"}
-                        onSelectStudent={(s) => { // Removed mode parameter here, it's inferred in renderPage
+                        onSelectStudent={(s) => {
                             setSelectedStudent(s);
                             setCurrentPage('studentDetail');
                             fetchStudentPayments(s.id);
                         }}
-                        currentLanguage={currentLanguage} // Pass language prop
+                        currentLanguage={currentLanguage}
                     />
                 );
             case 'pendingStudents':
                 return (
-                    <PendingStudentList // Using the new PendingStudentList
+                    <PendingStudentList
                         students={pendingStudents}
                         title={currentLanguage === 'en' ? "Students with Pending Fees" : "زیر التواء فیس والے طلباء"}
-                        onSelectStudent={(s) => { // Removed mode parameter here, it's inferred in renderPage
+                        onSelectStudent={(s) => {
                             setSelectedStudent(s);
                             setCurrentPage('studentDetail');
                             fetchStudentPayments(s.id);
                         }}
-                        currentLanguage={currentLanguage} // Pass language prop
+                        currentLanguage={currentLanguage}
                     />
                 );
             case 'addStudent':
-                return <AddStudentForm handleAddStudent={handleAddStudent} setError={setError} currentLanguage={currentLanguage} />;
+                return <AddStudentForm
+                            studentData={addStudentFormData}
+                            setStudentData={setAddStudentFormData}
+                            setError={setError}
+                            currentLanguage={currentLanguage}
+                        />;
             case 'studentDetail':
                 if (!selectedStudent || studentPayments === null) {
                     return (
-                        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full max-w-xl border border-blue-50 text-center text-gray-600">
+                        <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 mx-auto w-full border border-blue-50 text-center text-gray-600">
                             <Clock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                             <p className="text-lg font-medium">
                                 {currentLanguage === 'en' ? 'Loading student details or an error occurred.' : 'طالب علم کی تفصیلات لوڈ ہو رہی ہیں یا کوئی خرابی پیش آئی ہے۔'}
@@ -1723,14 +1788,6 @@ const App = () => {
                         student={selectedStudent}
                         payments={studentPayments.payments}
                         onUpdatePayment={handleUpdatePayment}
-                        onBackToList={() => {
-                            // Go back to the appropriate list page based on the view mode
-                            if (studentDetailViewMode === 'pending-summary') {
-                                setCurrentPage('pendingStudents');
-                            } else {
-                                setCurrentPage('allStudents');
-                            }
-                        }}
                         handleDeleteStudent={handleDeleteStudent}
                         setError={setError}
                         setSuccessMessage={setSuccessMessage}
@@ -1813,13 +1870,25 @@ const App = () => {
 
             <LoadingOverlay isLoading={loading} />
 
-            <Header setCurrentPage={setCurrentPage} currentLanguage={currentLanguage} isLoggedIn={isLoggedIn} />
+            <Header setCurrentPage={setCurrentPage} currentLanguage={currentLanguage} isLoggedIn={isLoggedIn} currentPage={currentPage} />
 
             <main className={`max-w-4xl mx-auto px-4 pt-4 ${currentLanguage === 'ur' ? 'lang-ur' : ''}`}>
                 <MessageDisplay message={error} type="error" />
                 <MessageDisplay message={successMessage} type="success" />
                 {renderPage()}
             </main>
+
+            {/* Fixed Add Student Button */}
+            {currentPage === 'addStudent' && isLoggedIn && (
+                <div className="fixed bottom-20 left-0 right-0 p-4 bg-white/90 backdrop-blur-sm border-t border-gray-100 shadow-top-lg z-40">
+                    <button
+                        onClick={handleAddStudent}
+                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out text-lg tracking-wide transform hover:scale-105 active:scale-95"
+                    >
+                        {currentLanguage === 'en' ? 'Add Student' : 'طالب علم شامل کریں'}
+                    </button>
+                </div>
+            )}
 
             <Navigation
                 currentPage={currentPage}
