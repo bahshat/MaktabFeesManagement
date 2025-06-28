@@ -1157,10 +1157,9 @@ const App: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // Authentication state
 
     // Base URL for the Flask API
-    // IMPORTANT: If running on a physical mobile device, replace '192.168.1.6' with your computer's local IP address
-    // (e.g., 'http://192.168.1.5:5000').
-    // Also, ensure your Flask backend has Flask-CORS installed and configured to allow requests from your frontend's origin.
-    const API_BASE_URL = 'http://192.168.1.6:5000';
+    // It will try to read from VITE_API_URL environment variable first,
+    // otherwise, it defaults to the local development URL.
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://192.168.1.6:5000';
 
     // Message display component
     interface MessageDisplayProps {
@@ -1181,7 +1180,7 @@ const App: React.FC = () => {
                 setSuccessMessage(null);
             }, 5000);
             return () => clearTimeout(timer);
-        }, [message]);
+        }, [message, setError, setSuccessMessage]); // Added dependencies for useEffect cleanup
 
         return (
             <div className={`${bgColor} ${textColor} border ${borderColor} rounded-md p-4 mb-4 text-center mx-auto max-w-xl font-medium text-sm`}>
