@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Clock } from 'lucide-react';
 
-import type { Student, Payment, StudentPaymentDetailsResponse, ErrorResponse, AddStudentFormData } from './common/types';
+import type { Student, Payment, StudentPaymentDetailsResponse, ErrorResponse, AddStudentFormData, MessageDisplayProps } from './common/types';
 import { StudentDetail } from './pages/StudentDetail';
 import { StudentList } from './pages/StudentList';
 import { AddStudentForm } from './pages/AddStudentForm';
@@ -16,9 +16,6 @@ import { Header } from './common/Header';
 import { LoadingOverlay } from './common/LoadingOverlay';
 
 
-
-
-// --- App.tsx (Main Application Logic) ---
 const App = () => {
     const [currentPage, setCurrentPage] = useState('login');
     const [students, setStudents] = useState<Student[] | null>(null);
@@ -30,7 +27,6 @@ const App = () => {
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [currentLanguage, setCurrentLanguage] = useState<'en' | 'ur'>('en');
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-
     const [addStudentFormData, setAddStudentFormData] = useState<AddStudentFormData>({
         name: '',
         address: null,
@@ -42,17 +38,11 @@ const App = () => {
         student_class: null,
     });
 
-    const API_BASE_URL = 'https://bahshat.pythonanywhere.com';
+    const API_BASE_URL = 'https://bahshat.pythonanywhere.com' //import.meta.env.VITE_API_BASE_URL
 
     const toggleLanguage = () => {
         setCurrentLanguage(prevLang => prevLang === 'en' ? 'ur' : 'en');
     };
-
-    // MessageDisplay Component
-    interface MessageDisplayProps {
-        message: string | null;
-        type: 'error' | 'success';
-    }
 
     const MessageDisplay: React.FC<MessageDisplayProps> = ({ message, type }) => {
         if (!message) return null;
@@ -117,12 +107,6 @@ const App = () => {
         setPendingStudents(data);
     }, [fetchData, API_BASE_URL, isLoggedIn]);
 
-    const fetchAllPayments = useCallback(async () => {
-        if (!isLoggedIn) return;
-        await fetchData<Payment[]>(`${API_BASE_URL}/payments`, "Failed to load all payments.");
-    }, [fetchData, API_BASE_URL, isLoggedIn]);
-
-
     const fetchStudentPayments = useCallback(async (studentId: number) => {
         if (!isLoggedIn) return;
         const fetchedData = await fetchData<StudentPaymentDetailsResponse>(`${API_BASE_URL}/students/${studentId}/payments`, "Failed to load payment details.");
@@ -181,7 +165,6 @@ const App = () => {
             setCurrentPage('allStudents');
             fetchAllStudents();
             fetchPendingStudents();
-            fetchAllPayments();
         } catch (e) { /* Error handled by handleMutation */ }
     };
 
@@ -230,7 +213,6 @@ const App = () => {
             setCurrentPage('allStudents');
             fetchAllStudents();
             fetchPendingStudents();
-            fetchAllPayments();
             setAddStudentFormData({
                 name: '',
                 address: null,
@@ -256,7 +238,6 @@ const App = () => {
             fetchStudentPayments(studentId);
             fetchAllStudents();
             fetchPendingStudents();
-            fetchAllPayments();
         } catch (e) { /* Error handled by handleMutation */ }
     };
 
@@ -272,7 +253,6 @@ const App = () => {
             setCurrentPage('allStudents');
             fetchAllStudents();
             fetchPendingStudents();
-            fetchAllPayments();
             setSelectedStudent(null);
             setStudentPayments(null);
         } catch (e) { /* Error handled by handleMutation */ }
@@ -283,9 +263,8 @@ const App = () => {
         if (isLoggedIn) {
             fetchAllStudents();
             fetchPendingStudents();
-            fetchAllPayments();
         }
-    }, [isLoggedIn, fetchAllStudents, fetchPendingStudents, fetchAllPayments]);
+    }, [isLoggedIn, fetchAllStudents, fetchPendingStudents]);
 
     const renderPage = () => {
         if (!isLoggedIn) {

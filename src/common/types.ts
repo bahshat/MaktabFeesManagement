@@ -130,3 +130,9 @@ export interface HeaderProps {
     isLoggedIn: boolean;
     currentPage: string;
 }
+
+// MessageDisplay Component
+export interface MessageDisplayProps {
+    message: string | null;
+    type: 'error' | 'success';
+}
