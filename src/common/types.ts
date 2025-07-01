@@ -122,3 +122,11 @@ export interface NavigationProps {
     currentLanguage: 'en' | 'ur';
     isLoggedIn: boolean;
 }
+
+// Header.tsx
+export interface HeaderProps {
+    setCurrentPage: (page: string) => void;
+    currentLanguage: 'en' | 'ur';
+    isLoggedIn: boolean;
+    currentPage: string;
+}

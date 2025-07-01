@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Home, Clock, UserPlus, BarChart2, BellRing, ArrowLeftCircle, Settings } from 'lucide-react';
+import { Clock } from 'lucide-react';
 
-import type { Student, Payment, StudentPaymentDetailsResponse, ErrorResponse, LoadingOverlayProps, AddStudentFormData, NavigationProps } from './common/types';
+import type { Student, Payment, StudentPaymentDetailsResponse, ErrorResponse, AddStudentFormData } from './common/types';
 import { StudentDetail } from './pages/StudentDetail';
 import { StudentList } from './pages/StudentList';
 import { AddStudentForm } from './pages/AddStudentForm';
@@ -11,120 +11,12 @@ import { SettingsPage } from './pages/SettingsPage';
 import { ChangePasswordForm } from './pages/ChangePasswordForm';
 import { ReminderList } from './pages/ReminderList';
 import { AuthForm } from './pages/AuthForm';
-
-const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ isLoading }) => {
-    if (!isLoading) return null;
-
-    return (
-        <div className="fixed inset-0 bg-blue-950 bg-opacity-70 flex items-center justify-center z-[9999] transition-opacity duration-300 backdrop-blur-sm">
-            <div className="flex flex-col items-center text-white p-6 rounded-xl bg-blue-800/80 shadow-2xl">
-                <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-400"></div>
-                <p className="mt-4 text-xl font-semibold">Loading data...</p>
-            </div>
-        </div>
-    );
-};
-
-// Header.tsx
-interface HeaderProps {
-    setCurrentPage: (page: string) => void;
-    currentLanguage: 'en' | 'ur';
-    isLoggedIn: boolean;
-    currentPage: string;
-}
-
-const Header: React.FC<HeaderProps> = ({ setCurrentPage, currentLanguage, isLoggedIn, currentPage }) => {
-    const title = currentLanguage === 'en' ? 'Maktab Fees Portal' : 'مکتب فیس پورٹل';
-    const organizationName = currentLanguage === 'en' ? 'Anjuman Abu Hurairah' : 'انجمن ابو ہریرہ';
-
-    const showBackButton = isLoggedIn && (
-        currentPage === 'studentDetail' ||
-        currentPage === 'addStudent' ||
-        currentPage === 'settings' ||
-        currentPage === 'changePassword'
-    );
-
-    const getBackPage = () => {
-        switch (currentPage) {
-            case 'studentDetail':
-                return 'allStudents';
-            case 'addStudent':
-                return 'allStudents';
-            case 'changePassword':
-                return 'settings';
-            case 'settings':
-                return 'allStudents';
-            default:
-                return 'allStudents';
-        }
-    };
+import { Navigation } from './common/Navigation';
+import { Header } from './common/Header';
+import { LoadingOverlay } from './common/LoadingOverlay';
 
 
-    return (
-        <header className="fixed top-0 left-0 right-0 bg-gradient-to-br from-blue-700 to-purple-800 text-white p-4 pb-6 rounded-b-3xl shadow-xl z-20 font-bold">
-            <div className="flex justify-between items-center relative w-full px-2 sm:px-4">
-                {showBackButton ? (
-                    <button
-                        onClick={() => setCurrentPage(getBackPage())}
-                        className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition duration-200 shadow-md flex-shrink-0"
-                        title={currentLanguage === 'en' ? 'Back' : 'پیچھے جائیں'}
-                    >
-                        <ArrowLeftCircle className="w-5 h-5 text-white" />
-                    </button>
-                ) : (
-                    <div className="w-8"></div>
-                )}
-                <h1 className="text-xl font-extrabold text-center tracking-wide leading-tight flex-grow drop-shadow-lg mx-2">
-                    {title}
-                </h1>
-                <div className="flex space-x-2 flex-shrink-0">
-                    {isLoggedIn && (
-                        <button
-                            onClick={() => setCurrentPage('settings')}
-                            className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition duration-200 shadow-md"
-                            title={currentLanguage === 'en' ? 'Settings' : 'ترتیبات'}
-                        >
-                            <Settings className="w-5 h-5 text-white" />
-                        </button>
-                    )}
-                </div>
-            </div>
-            <p className="text-center text-sm text-blue-200 mt-1 font-medium">{organizationName}</p>
-        </header>
-    );
-};
 
-
-const Navigation: React.FC<NavigationProps> = ({ currentPage, setCurrentPage, fetchPendingStudents, fetchAllStudents, currentLanguage, isLoggedIn }) => {
-    if (!isLoggedIn) return null;
-
-    const navItems = [
-        { name: currentLanguage === 'en' ? 'All Students' : 'تمام طلباء', icon: Home, page: 'allStudents', action: fetchAllStudents },
-        { name: currentLanguage === 'en' ? 'Pending' : 'زیر التواء', icon: Clock, page: 'pendingStudents', action: fetchPendingStudents },
-        { name: currentLanguage === 'en' ? 'Add' : 'شامل کریں', icon: UserPlus, page: 'addStudent' },
-        { name: currentLanguage === 'en' ? 'Dashboard' : 'ڈیش بورڈ', icon: BarChart2, page: 'dashboard', action: fetchAllStudents },
-        { name: currentLanguage === 'en' ? 'Reminders' : 'یاد دہانیاں', icon: BellRing, page: 'reminders', action: fetchAllStudents }
-    ];
-
-    return (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm shadow-top-lg border-t border-gray-100 z-50 p-2 sm:relative sm:bg-transparent sm:shadow-none sm:border-none sm:mb-8 flex justify-around sm:justify-center gap-2 sm:gap-4 sm:p-0">
-            {navItems.map((item) => (
-                <button
-                    key={item.page}
-                    onClick={() => {
-                        setCurrentPage(item.page);
-                        if (item.action) item.action();
-                    }}
-                    className={`flex flex-col items-center justify-center flex-1 py-2 px-1 rounded-xl transition-all duration-200 ease-in-out
-                        ${currentPage === item.page ? 'text-blue-700 font-semibold bg-blue-100 shadow-md' : 'text-gray-600 hover:text-blue-700 hover:bg-gray-50'}`}
-                >
-                    <item.icon className="w-6 h-6 mb-1 drop-shadow-sm" />
-                    <span className="text-xs sm:text-sm font-medium">{item.name}</span>
-                </button>
-            ))}
-        </nav>
-    );
-};
 
 // --- App.tsx (Main Application Logic) ---
 const App = () => {
