@@ -118,10 +118,7 @@ export interface ReminderListProps {
 export interface NavigationProps {
     currentPage: string;
     setCurrentPage: (page: string) => void;
-    fetchPendingStudents: () => void;
-    fetchAllStudents: () => void;
-    currentLanguage: 'en' | 'ur';
-    isLoggedIn: boolean;
+    currentLanguage: 'en' | 'ur'
 }
 
 // Header.tsx

@@ -191,7 +191,6 @@ const App = () => {
         } catch (e) { /* Error handled by handleMutation */ }
     };
 
-
     const handleAddStudent = async () => {
         if (!addStudentFormData.name || !addStudentFormData.admission_date || !addStudentFormData.initial_paid_till || addStudentFormData.monthly_fee === 0) {
             setError(currentLanguage === 'en' ? "Please fill in Name, Admission Date, Initial Paid Till date, and Monthly Fee." : "براہ کرم نام، داخلہ کی تاریخ، ابتدائی ادائیگی کی تاریخ تک، اور ماہانہ فیس پُر کریں۔");
@@ -419,14 +418,7 @@ const App = () => {
                 {renderPage()}
             </main>
 
-            <Navigation
-                currentPage={currentPage}
-                setCurrentPage={setCurrentPage}
-                fetchPendingStudents={fetchPendingStudents}
-                fetchAllStudents={fetchAllStudents}
-                currentLanguage={currentLanguage}
-                isLoggedIn={isLoggedIn}
-            />
+            {isLoggedIn && <Navigation currentPage={currentPage} setCurrentPage={setCurrentPage} currentLanguage={currentLanguage} />}
         </div>
     );
 };
