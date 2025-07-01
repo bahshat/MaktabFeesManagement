@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Clock } from 'lucide-react';
 
-import type { Student, Payment, StudentPaymentDetailsResponse, ErrorResponse, AddStudentFormData, MessageDisplayProps } from './common/types';
+import type { Student, StudentPaymentDetailsResponse, ErrorResponse, AddStudentFormData, MessageDisplayProps } from './common/types';
 import { StudentDetail } from './pages/StudentDetail';
 import { StudentList } from './pages/StudentList';
 import { AddStudentForm } from './pages/AddStudentForm';
