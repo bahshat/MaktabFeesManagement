@@ -310,6 +310,7 @@ const App = () => {
                     setStudentData={setAddStudentFormData}
                     setError={setError}
                     currentLanguage={currentLanguage}
+                    handleAddStudent={handleAddStudent}
                 />;
             case 'studentDetail':
                 if (!selectedStudent || studentPayments === null) {
@@ -417,18 +418,6 @@ const App = () => {
                 <MessageDisplay message={successMessage} type="success" />
                 {renderPage()}
             </main>
-
-            {/* Fixed Add Student Button */}
-            {currentPage === 'addStudent' && isLoggedIn && (
-                <div className="fixed bottom-20 left-0 right-0 p-4 bg-white/90 backdrop-blur-sm border-t border-gray-100 shadow-top-lg z-40">
-                    <button
-                        onClick={handleAddStudent}
-                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out text-lg tracking-wide transform hover:scale-105 active:scale-95"
-                    >
-                        {currentLanguage === 'en' ? 'Add Student' : 'طالب علم شامل کریں'}
-                    </button>
-                </div>
-            )}
 
             <Navigation
                 currentPage={currentPage}

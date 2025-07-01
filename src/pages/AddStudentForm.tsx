@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import type { AddStudentFormProps } from "../common/types";
 
 
-export const AddStudentForm: React.FC<AddStudentFormProps> = ({ studentData, setStudentData, currentLanguage }) => {
+export const AddStudentForm: React.FC<AddStudentFormProps> = ({ studentData, setStudentData, currentLanguage, handleAddStudent }) => {
     const today = new Date().toISOString().split('T')[0];
 
     useEffect(() => {
@@ -142,6 +142,13 @@ export const AddStudentForm: React.FC<AddStudentFormProps> = ({ studentData, set
                         required
                     />
                 </div>
+
+                <button
+                    onClick={handleAddStudent}
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out text-lg tracking-wide transform hover:scale-105 active:scale-95"
+                >
+                    {currentLanguage === 'en' ? 'Add Student' : 'طالب علم شامل کریں'}
+                </button>
             </form>
         </div>
     );

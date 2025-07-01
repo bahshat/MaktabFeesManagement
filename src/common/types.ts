@@ -61,6 +61,7 @@ export interface AddStudentFormProps {
     setStudentData: React.Dispatch<React.SetStateAction<AddStudentFormData>>;
     setError: (message: string | null) => void;
     currentLanguage: 'en' | 'ur';
+    handleAddStudent: () => Promise<void>;
 }
 
 // Dashboard.tsx
