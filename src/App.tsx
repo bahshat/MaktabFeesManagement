@@ -25,9 +25,14 @@ const App = () => {
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [currentLanguage, setCurrentLanguage] = useState<'en' | 'ur'>('en');
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+    const [dashboardSummary, setDashboardSummary] = useState<{
+        total_students: number | null;
+        total_pending_amount: number | null;
+        pending_students_count: number | null;
+        cleared_students_count: number | null;
+    } | null>(null);
 
-
-    const API_BASE_URL = 'https://bahshat.pythonanywhere.com' //import.meta.env.VITE_API_BASE_URL
+    const API_BASE_URL = 'http://192.168.1.9:5000' //import.meta.env.VITE_API_BASE_URL
 
     const toggleLanguage = () => {
         setCurrentLanguage(prevLang => prevLang === 'en' ? 'ur' : 'en');
@@ -100,6 +105,18 @@ const App = () => {
             setSelectedStudent(null);
             setStudentPayments(null);
         }
+    }, [fetchData, API_BASE_URL, isLoggedIn]);
+
+
+    const fetchDashboardSummary = useCallback(async () => {
+        if (!isLoggedIn) return;
+        const data = await fetchData<{
+            total_students: number;
+            total_pending_amount: number;
+            pending_students_count: number;
+            cleared_students_count: number;
+        }>(`${API_BASE_URL}/dashboard_summary`, "Failed to load dashboard summary.");
+        setDashboardSummary(data);
     }, [fetchData, API_BASE_URL, isLoggedIn]);
 
     const handleMutation = useCallback(async (url: string, method: string, body: any, successMsg: string, errorMsg: string) => {
@@ -202,9 +219,9 @@ const App = () => {
         } catch (e) { /* Error handled by handleMutation */ }
     };
 
-
     useEffect(() => {
         if (isLoggedIn) {
+            fetchDashboardSummary();
             fetchPendingStudents();
         }
     }, [isLoggedIn, fetchPendingStudents]);
@@ -264,7 +281,7 @@ const App = () => {
                     />
                 );
             case 'dashboard':
-                return <Dashboard data={"a"} currentLanguage={currentLanguage} />;
+                 return <Dashboard dashboardSummary={dashboardSummary} currentLanguage={currentLanguage} />;;
             case 'reminders':
                 return <ReminderList allStudents={students} setError={setError} setSuccessMessage={setSuccessMessage} currentLanguage={currentLanguage} />;
             case 'settings':

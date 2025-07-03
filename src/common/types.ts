@@ -66,7 +66,7 @@ export interface AddStudentFormProps {
 
 // Dashboard.tsx
 export interface DashboardProps {
-    data:{};
+    dashboardSummary:any;
     currentLanguage: 'en' | 'ur';
 }
 
