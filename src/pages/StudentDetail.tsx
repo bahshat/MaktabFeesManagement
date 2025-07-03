@@ -4,12 +4,6 @@ import React, { useState } from 'react';
 import { formatDate } from '../common/utils';
 
 import {
-    User,
-    CalendarDays,
-    BookOpen,
-    MapPin,
-    Phone,
-    DollarSign,
     CheckCircle,
     XCircle,
     ChevronDown,
@@ -34,16 +28,12 @@ interface StudentDetailProps {
     currentLanguage: 'en' | 'ur';
 }
 
-export const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpdatePayment, handleDeleteStudent, setError, setSuccessMessage, pendingDataForStudent, viewMode, currentLanguage }) => {
+export const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments, onUpdatePayment, setError, setSuccessMessage, pendingDataForStudent, viewMode, currentLanguage }) => {
     const [newPaidTill, setNewPaidTill] = useState<string>('');
-    const [isBiodataOpen, setIsBiodataOpen] = useState(viewMode === 'full');
     const [isCurrentPendingOpen, setIsCurrentPendingOpen] = useState(viewMode === 'pending-summary');
     const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(viewMode === 'pending-summary');
     const [isUpdatePaymentOpen, setIsUpdatePaymentOpen] = useState(viewMode === 'pending-summary');
     const [isReminderSectionOpen, setIsReminderSectionOpen] = useState(viewMode === 'pending-summary');
-
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [deletePassword, setDeletePassword] = useState('');
 
     const handleUpdateSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -102,21 +92,6 @@ export const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments,
         setSuccessMessage(currentLanguage === 'en' ? `SMS reminder simulated for ${student.name}.` : `${student.name} کے لیے ایس ایم ایس یاد دہانی بھیجی گئی۔`);
     };
 
-    const handleDeleteClick = () => {
-        setShowDeleteConfirm(true);
-        setDeletePassword('');
-    };
-
-    const handleConfirmDelete = async () => {
-        if (!deletePassword) {
-            setError(currentLanguage === 'en' ? "Please enter your password to confirm deletion." : "براہ کرم حذف کی تصدیق کے لیے اپنا پاس ورڈ درج کریں۔");
-            return;
-        }
-        await handleDeleteStudent(student.id, student.name, deletePassword);
-        setShowDeleteConfirm(false);
-        setDeletePassword('');
-    };
-
     const isFeesCleared = pendingDataForStudent.pending_amount === 0 || pendingDataForStudent.pending_amount === undefined;
 
     return (
@@ -124,28 +99,6 @@ export const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments,
             <h2 className="text-2xl font-bold mb-2 text-gray-800 text-center">
                 {student.name}
             </h2>
-
-            {/* Student Biodata Section */}
-            <div className="border border-gray-200 rounded-xl mb-4 overflow-hidden shadow-sm">
-                <button
-                    className="w-full flex justify-between items-center bg-blue-50 p-4 font-semibold text-gray-700 hover:bg-blue-100 transition duration-150"
-                    onClick={() => setIsBiodataOpen(!isBiodataOpen)}
-                >
-                    {currentLanguage === 'en' ? 'Student Biodata' : 'طالب علم کی بائیو ڈیٹا'}
-                    {isBiodataOpen ? <ChevronUp className="w-5 h-5 text-gray-600" /> : <ChevronDown className="w-5 h-5 text-gray-600" />}
-                </button>
-                {isBiodataOpen && (
-                    <div className="p-4 space-y-2 text-gray-700 text-base border-t border-gray-200">
-                        <p className="flex items-center"><User className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Roll No.:' : 'رول نمبر:'}</span> {student.id}</p>
-                        <p className="flex items-center"><CalendarDays className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Age:' : 'عمر:'}</span> {student.age || 'N/A'}</p>
-                        <p className="flex items-center"><BookOpen className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Class:' : 'کلاس:'}</span> {student.student_class || 'N/A'}</p>
-                        <p className="flex items-center"><MapPin className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Address:' : 'پتہ:'}</span> {student.address || 'N/A'}</p>
-                        <p className="flex items-center"><Phone className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Phone:' : 'فون:'}</span> <a href={`tel:${student.phone}`} className="text-blue-600 hover:underline">{student.phone || 'N/A'}</a></p>
-                        <p className="flex items-center"><CalendarDays className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Admission Date:' : 'داخلہ کی تاریخ:'}</span> {formatDate(student.admission_date)}</p>
-                        <p className="flex items-center"><DollarSign className="w-5 h-5 mr-3 text-gray-500" /><span className="font-semibold">{currentLanguage === 'en' ? 'Monthly Fee:' : 'ماہانہ فیس:'}</span> ₹{student.monthly_fee}</p>
-                    </div>
-                )}
-            </div>
 
             {/* Current Pending/Cleared Information Section */}
             <div className="border border-gray-200 rounded-xl mb-4 overflow-hidden shadow-sm">
@@ -298,51 +251,7 @@ export const StudentDetail: React.FC<StudentDetailProps> = ({ student, payments,
                     </div>
                 )}
             </div>
-
-
-            {/* Delete Student Button */}
-            {
-                <button
-                    onClick={handleDeleteClick}
-                    className="mt-6 w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out text-lg tracking-wide transform hover:scale-105 active:scale-95"
-                >
-                    {currentLanguage === 'en' ? 'Delete Student' : 'طالب علم حذف کریں'}
-                </button>
-            }
-
-            {/* Delete Confirmation Modal */}
-            {showDeleteConfirm && (
-                <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[9999]">
-                    <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full mx-4 text-center border border-gray-200">
-                        <XCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
-                        <h3 className="text-xl font-bold mb-4 text-gray-800">{currentLanguage === 'en' ? 'Confirm Deletion' : 'حذف کی تصدیق کریں'}</h3>
-                        <p className="text-gray-700 mb-4">
-                            {currentLanguage === 'en' ? `Are you sure you want to delete ${student.name} (Roll No.: ${student.id})? This action cannot be undone.` : `${student.name} (رول نمبر: ${student.id}) کو حذف کرنا چاہتے ہیں؟ یہ عمل واپس نہیں لیا جا سکتا۔`}
-                        </p>
-                        <input
-                            type="password"
-                            placeholder={currentLanguage === 'en' ? 'Enter admin password' : 'ایڈمن پاس ورڈ درج کریں'}
-                            className="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:ring-red-500 focus:border-red-500"
-                            value={deletePassword}
-                            onChange={(e) => setDeletePassword(e.target.value)}
-                        />
-                        <div className="flex justify-around gap-4">
-                            <button
-                                onClick={() => setShowDeleteConfirm(false)}
-                                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-xl transition duration-150"
-                            >
-                                {currentLanguage === 'en' ? 'Cancel' : 'منسوخ کریں'}
-                            </button>
-                            <button
-                                onClick={handleConfirmDelete}
-                                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-xl transition duration-150"
-                            >
-                                {currentLanguage === 'en' ? 'Delete' : 'حذف کریں'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+           
         </div>
     );
 };

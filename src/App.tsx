@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Clock } from 'lucide-react';
 
-import type { Student, StudentPaymentDetailsResponse, ErrorResponse, AddStudentFormData, MessageDisplayProps } from './common/types';
+import type { Student, StudentPaymentDetailsResponse, ErrorResponse, MessageDisplayProps } from './common/types';
 import { StudentDetail } from './pages/StudentDetail';
-import { StudentList } from './pages/StudentList';
-import { AddStudentForm } from './pages/AddStudentForm';
 import { Dashboard } from './pages/Dashboard';
 import { PendingStudentList } from './pages/PendingStudentList';
 import { SettingsPage } from './pages/SettingsPage';
@@ -27,16 +25,7 @@ const App = () => {
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [currentLanguage, setCurrentLanguage] = useState<'en' | 'ur'>('en');
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-    const [addStudentFormData, setAddStudentFormData] = useState<AddStudentFormData>({
-        name: '',
-        address: null,
-        phone: null,
-        admission_date: '',
-        initial_paid_till: '',
-        monthly_fee: 400,
-        age: null,
-        student_class: null,
-    });
+
 
     const API_BASE_URL = 'https://bahshat.pythonanywhere.com' //import.meta.env.VITE_API_BASE_URL
 
@@ -95,12 +84,6 @@ const App = () => {
         }
     }, [API_BASE_URL]);
 
-    const fetchAllStudents = useCallback(async () => {
-        if (!isLoggedIn) return;
-        const data = await fetchData<Student[]>(`${API_BASE_URL}/students`, "Failed to load students.");
-        setStudents(data);
-    }, [fetchData, API_BASE_URL, isLoggedIn]);
-
     const fetchPendingStudents = useCallback(async () => {
         if (!isLoggedIn) return;
         const data = await fetchData<Student[]>(`${API_BASE_URL}/students/pending`, "Failed to load pending students.");
@@ -118,7 +101,6 @@ const App = () => {
             setStudentPayments(null);
         }
     }, [fetchData, API_BASE_URL, isLoggedIn]);
-
 
     const handleMutation = useCallback(async (url: string, method: string, body: any, successMsg: string, errorMsg: string) => {
         setLoading(true);
@@ -162,8 +144,7 @@ const App = () => {
                 currentLanguage === 'en' ? "Login failed. Invalid credentials." : "لاگ ان ناکام. غلط معلومات."
             );
             setIsLoggedIn(true);
-            setCurrentPage('allStudents');
-            fetchAllStudents();
+            setCurrentPage('pendingStudents');
             fetchPendingStudents();
         } catch (e) { /* Error handled by handleMutation */ }
     };
@@ -191,40 +172,6 @@ const App = () => {
         } catch (e) { /* Error handled by handleMutation */ }
     };
 
-    const handleAddStudent = async () => {
-        if (!addStudentFormData.name || !addStudentFormData.admission_date || !addStudentFormData.initial_paid_till || addStudentFormData.monthly_fee === 0) {
-            setError(currentLanguage === 'en' ? "Please fill in Name, Admission Date, Initial Paid Till date, and Monthly Fee." : "براہ کرم نام، داخلہ کی تاریخ، ابتدائی ادائیگی کی تاریخ تک، اور ماہانہ فیس پُر کریں۔");
-            return;
-        }
-        if (new Date(addStudentFormData.initial_paid_till) < new Date(addStudentFormData.admission_date)) {
-            setError(currentLanguage === 'en' ? "Initial Paid Till Date cannot be earlier than Admission Date." : "ابتدائی ادائیگی کی تاریخ داخلہ کی تاریخ سے پہلے نہیں ہو سکتی ہے۔");
-            return;
-        }
-
-        try {
-            await handleMutation(
-                `${API_BASE_URL}/students`,
-                'POST',
-                addStudentFormData,
-                currentLanguage === 'en' ? "Student added successfully!" : "طالب علم کامیابی سے شامل کر دیا گیا!",
-                currentLanguage === 'en' ? "Failed to add student." : "طالب علم شامل کرنے میں ناکام۔"
-            );
-            setCurrentPage('allStudents');
-            fetchAllStudents();
-            fetchPendingStudents();
-            setAddStudentFormData({
-                name: '',
-                address: null,
-                phone: null,
-                admission_date: new Date().toISOString().split('T')[0],
-                initial_paid_till: '',
-                monthly_fee: 400,
-                age: null,
-                student_class: null,
-            });
-        } catch (e) { /* Error handled by handleMutation */ }
-    };
-
     const handleUpdatePayment = async (studentId: number, paidTillDate: string) => {
         try {
             await handleMutation(
@@ -235,7 +182,6 @@ const App = () => {
                 currentLanguage === 'en' ? "Failed to update payment." : "ادائیگی اپ ڈیٹ کرنے میں ناکام۔"
             );
             fetchStudentPayments(studentId);
-            fetchAllStudents();
             fetchPendingStudents();
         } catch (e) { /* Error handled by handleMutation */ }
     };
@@ -250,7 +196,6 @@ const App = () => {
                 currentLanguage === 'en' ? `Failed to delete student '${studentName}'. Invalid password or other error.` : `طالب علم '${studentName}' حذف کرنے میں ناکام۔ غلط پاس ورڈ یا کوئی اور خرابی۔`
             );
             setCurrentPage('allStudents');
-            fetchAllStudents();
             fetchPendingStudents();
             setSelectedStudent(null);
             setStudentPayments(null);
@@ -260,10 +205,9 @@ const App = () => {
 
     useEffect(() => {
         if (isLoggedIn) {
-            fetchAllStudents();
             fetchPendingStudents();
         }
-    }, [isLoggedIn, fetchAllStudents, fetchPendingStudents]);
+    }, [isLoggedIn, fetchPendingStudents]);
 
     const renderPage = () => {
         if (!isLoggedIn) {
@@ -277,24 +221,11 @@ const App = () => {
 
 
         switch (currentPage) {
-            case 'allStudents':
-                return (
-                    <StudentList
-                        students={students}
-                        title={currentLanguage === 'en' ? "All Students" : "تمام طلباء"}
-                        onSelectStudent={(s) => {
-                            setSelectedStudent(s);
-                            setCurrentPage('studentDetail');
-                            fetchStudentPayments(s.id);
-                        }}
-                        currentLanguage={currentLanguage}
-                    />
-                );
             case 'pendingStudents':
                 return (
                     <PendingStudentList
                         students={pendingStudents}
-                        title={currentLanguage === 'en' ? "Students with Pending Fees" : "زیر التواء فیس والے طلباء"}
+                        title={currentLanguage === 'en' ? "Pending Fees" : "زیر التواء فیس والے طلباء"}
                         onSelectStudent={(s) => {
                             setSelectedStudent(s);
                             setCurrentPage('studentDetail');
@@ -303,14 +234,6 @@ const App = () => {
                         currentLanguage={currentLanguage}
                     />
                 );
-            case 'addStudent':
-                return <AddStudentForm
-                    studentData={addStudentFormData}
-                    setStudentData={setAddStudentFormData}
-                    setError={setError}
-                    currentLanguage={currentLanguage}
-                    handleAddStudent={handleAddStudent}
-                />;
             case 'studentDetail':
                 if (!selectedStudent || studentPayments === null) {
                     return (
@@ -341,7 +264,7 @@ const App = () => {
                     />
                 );
             case 'dashboard':
-                return <Dashboard students={students} currentLanguage={currentLanguage} />;
+                return <Dashboard data={"a"} currentLanguage={currentLanguage} />;
             case 'reminders':
                 return <ReminderList allStudents={students} setError={setError} setSuccessMessage={setSuccessMessage} currentLanguage={currentLanguage} />;
             case 'settings':

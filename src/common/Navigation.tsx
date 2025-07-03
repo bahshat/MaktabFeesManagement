@@ -1,11 +1,9 @@
 import type { NavigationProps } from "./types";
-import { Home, Clock, UserPlus, BarChart2, BellRing} from 'lucide-react';
+import { Clock, BarChart2, BellRing} from 'lucide-react';
 
 export const Navigation: React.FC<NavigationProps> = ({ currentPage, setCurrentPage, currentLanguage}) => {
     const navItems = [
-        { name: currentLanguage === 'en' ? 'All Students' : 'تمام طلباء', icon: Home, page: 'allStudents'},
         { name: currentLanguage === 'en' ? 'Pending' : 'زیر التواء', icon: Clock, page: 'pendingStudents' },
-        { name: currentLanguage === 'en' ? 'Add' : 'شامل کریں', icon: UserPlus, page: 'addStudent'},
         { name: currentLanguage === 'en' ? 'Dashboard' : 'ڈیش بورڈ', icon: BarChart2, page: 'dashboard'},
         { name: currentLanguage === 'en' ? 'Reminders' : 'یاد دہانیاں', icon: BellRing, page: 'reminders' }
     ];

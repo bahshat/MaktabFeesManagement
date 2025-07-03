@@ -2,8 +2,8 @@ import { BarChart2, PieChart } from "lucide-react";
 import type { DashboardProps } from "../common/types";
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
-export const Dashboard: React.FC<DashboardProps> = ({ students, currentLanguage }) => {
-    if (!students || students.length === 0) {
+export const Dashboard: React.FC<DashboardProps> = ({ data, currentLanguage }) => {
+    if (data===null) {
         return (
             <div className="mb-6 mx-auto w-full">
                 <div className="bg-blue-50 p-6 rounded-xl shadow-inner text-center text-gray-600">
@@ -14,10 +14,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ students, currentLanguage 
         );
     }
 
-    const totalStudents = students.length;
-    const pendingStudentsCount = students.filter(s => s.pending_amount && s.pending_amount > 0).length;
-    const clearedStudentsCount = totalStudents - pendingStudentsCount;
-    const totalPendingAmount = students.reduce((sum, student) => sum + (student.pending_amount || 0), 0);
+    const totalStudents = 250//data.totalStudents;
+    const pendingStudentsCount = 35// data.pendingStudents;
+    const clearedStudentsCount = 215 //data.clearedStudent;
+    const totalPendingAmount = 35*400//data.totalPendingAmount;
 
 
     const pieData = [
